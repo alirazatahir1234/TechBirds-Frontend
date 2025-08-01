@@ -168,4 +168,130 @@ export const statsAPI = {
   },
 };
 
+// Admin API functions
+export const adminAPI = {
+  // Authentication
+  login: async (credentials) => {
+    const response = await api.post('/admin/auth/login', credentials);
+    return response.data;
+  },
+
+  register: async (userData) => {
+    const response = await api.post('/admin/auth/register', userData);
+    return response.data;
+  },
+
+  getCurrentAdmin: async () => {
+    const response = await api.get('/admin/auth/me');
+    return response.data;
+  },
+
+  logout: async () => {
+    const response = await api.post('/admin/auth/logout');
+    return response.data;
+  },
+
+  // Posts management
+  getPosts: async (params = {}) => {
+    const response = await api.get('/admin/posts', { params });
+    return response.data;
+  },
+
+  createPost: async (postData) => {
+    const response = await api.post('/admin/posts', postData);
+    return response.data;
+  },
+
+  updatePost: async (id, postData) => {
+    const response = await api.put(`/admin/posts/${id}`, postData);
+    return response.data;
+  },
+
+  deletePost: async (id) => {
+    const response = await api.delete(`/admin/posts/${id}`);
+    return response.data;
+  },
+
+  // Categories management
+  getCategories: async () => {
+    const response = await api.get('/admin/categories');
+    return response.data;
+  },
+
+  createCategory: async (categoryData) => {
+    const response = await api.post('/admin/categories', categoryData);
+    return response.data;
+  },
+
+  updateCategory: async (id, categoryData) => {
+    const response = await api.put(`/admin/categories/${id}`, categoryData);
+    return response.data;
+  },
+
+  deleteCategory: async (id) => {
+    const response = await api.delete(`/admin/categories/${id}`);
+    return response.data;
+  },
+
+  // Comments management
+  getComments: async (params = {}) => {
+    const response = await api.get('/admin/comments', { params });
+    return response.data;
+  },
+
+  updateCommentStatus: async (id, status) => {
+    const response = await api.patch(`/admin/comments/${id}/status`, { status });
+    return response.data;
+  },
+
+  deleteComment: async (id) => {
+    const response = await api.delete(`/admin/comments/${id}`);
+    return response.data;
+  },
+
+  replyToComment: async (id, replyData) => {
+    const response = await api.post(`/admin/comments/${id}/reply`, replyData);
+    return response.data;
+  },
+
+  // Newsletter management
+  getSubscribers: async (params = {}) => {
+    const response = await api.get('/admin/newsletter/subscribers', { params });
+    return response.data;
+  },
+
+  createCampaign: async (campaignData) => {
+    const response = await api.post('/admin/newsletter/campaigns', campaignData);
+    return response.data;
+  },
+
+  getCampaigns: async () => {
+    const response = await api.get('/admin/newsletter/campaigns');
+    return response.data;
+  },
+
+  sendCampaign: async (id) => {
+    const response = await api.post(`/admin/newsletter/campaigns/${id}/send`);
+    return response.data;
+  },
+
+  // Dashboard stats
+  getDashboardStats: async () => {
+    const response = await api.get('/admin/dashboard/stats');
+    return response.data;
+  },
+
+  // File upload
+  uploadFile: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/admin/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+};
+
 export default api;
