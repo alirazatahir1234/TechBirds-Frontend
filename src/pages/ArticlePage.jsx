@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Clock, User, Calendar, Share2, Bookmark, ArrowLeft } from 'lucide-react';
 import { articleAPI, statsAPI } from '../services/api';
 import { formatDistanceToNow, format } from 'date-fns';
+import CommentSection from '../components/CommentSection';
 
 const ArticlePage = () => {
   const { id } = useParams();
@@ -246,23 +247,25 @@ const ArticlePage = () => {
         </div>
       )}
 
-      {/* Author Bio */}
-      <div className="bg-gray-50 rounded-lg p-6 mb-8">
-        <div className="flex items-start">
-          <img
-            src={article.author.avatar}
-            alt={article.author.name}
-            className="w-16 h-16 rounded-full mr-4"
-          />
-          <div>
-            <h3 className="text-lg font-semibold mb-2">{article.author.name}</h3>
-            <p className="text-gray-600 mb-3">{article.author.bio}</p>
-            <Link
-              to={`/author/${article.author.id}`}
-              className="text-tech-green hover:text-green-600 font-medium"
-            >
-              View all articles by {article.author.name}
-            </Link>
+      {/* User Bio */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-8">
+        <div className="flex items-center justify-between">
+          <div className="flex items-start">
+            <img
+              src={article.author.avatar}
+              alt={article.author.name}
+              className="w-16 h-16 rounded-full mr-4 object-cover"
+            />
+            <div>
+              <h3 className="text-lg font-semibold mb-2">{article.author.name}</h3>
+              <p className="text-gray-600 mb-3">{article.author.bio}</p>
+              <Link
+                to={`/author/${article.author.id}`}
+                className="text-tech-green hover:text-green-700 font-medium"
+              >
+                View all articles by {article.author.name}
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -298,6 +301,11 @@ const ArticlePage = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Comments Section */}
+      {article && article.allowComments !== false && (
+        <CommentSection articleId={parseInt(id)} />
       )}
     </div>
   );

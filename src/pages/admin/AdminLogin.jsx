@@ -28,12 +28,20 @@ const AdminLogin = () => {
     setLoading(true);
     setError('');
 
-    const result = await login(formData);
-    
-    if (result.success) {
-      navigate('/admin/dashboard');
-    } else {
-      setError(result.error);
+    try {
+      const result = await login(formData);
+      
+      if (result.success) {
+        // Small delay to ensure state is updated
+        setTimeout(() => {
+          navigate('/admin/dashboard', { replace: true });
+        }, 100);
+      } else {
+        setError(result.error);
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('Login failed. Please try again.');
     }
     
     setLoading(false);

@@ -7,7 +7,7 @@ import HomePage from './pages/HomePage';
 import ArticlePage from './pages/ArticlePage';
 import CategoryPage from './pages/CategoryPage';
 import SearchPage from './pages/SearchPage';
-import AuthorPage from './pages/AuthorPage';
+import UserPage from './pages/UserPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Admin Components
@@ -18,8 +18,15 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import PostsList from './pages/admin/posts/PostsList';
 import PostForm from './pages/admin/posts/PostForm';
 import CategoriesManager from './pages/admin/categories/CategoriesManager';
+import UsersManager from './pages/admin/users/UsersManager';
+import CreateUser from './pages/admin/users/CreateUser';
+import UserRoles from './pages/admin/users/UserRoles';
 import NewsletterManager from './pages/admin/newsletter/NewsletterManager';
 import CommentsManager from './pages/admin/comments/CommentsManager';
+import PendingComments from './pages/admin/comments/PendingComments';
+import SpamComments from './pages/admin/comments/SpamComments';
+import Analytics from './pages/admin/operations/Analytics';
+import FileManager from './pages/admin/operations/FileManager';
 
 function App() {
   return (
@@ -31,7 +38,8 @@ function App() {
             <Route path="/" element={<><Header /><HomePage /><Footer /></>} />
             <Route path="/article/:id" element={<><Header /><ArticlePage /><Footer /></>} />
             <Route path="/category/:slug" element={<><Header /><CategoryPage /><Footer /></>} />
-            <Route path="/author/:id" element={<><Header /><AuthorPage /><Footer /></>} />
+            <Route path="/author/:id" element={<><Header /><UserPage /><Footer /></>} />
+            <Route path="/user/:id" element={<><Header /><UserPage /><Footer /></>} />
             <Route path="/search" element={<><Header /><SearchPage /><Footer /></>} />
             
             {/* Admin Authentication Routes */}
@@ -52,14 +60,29 @@ function App() {
               <Route path="categories" element={<CategoriesManager />} />
               <Route path="tags" element={<div>Tags Management - Coming Soon</div>} />
               
+              {/* Users Management (Primary Routes) */}
+              <Route path="users" element={<UsersManager />} />
+              <Route path="users/create" element={<CreateUser />} />
+              <Route path="users/roles" element={<UserRoles />} />
+              
+              {/* Authors Management (Backward Compatibility) */}
+              <Route path="authors" element={<UsersManager />} />
+              <Route path="authors/create" element={<CreateUser />} />
+              <Route path="authors/roles" element={<UserRoles />} />
+              
               {/* Comments Management */}
               <Route path="comments" element={<CommentsManager />} />
+              <Route path="comments/pending" element={<PendingComments />} />
+              <Route path="comments/spam" element={<SpamComments />} />
+              
+              {/* Operations */}
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="files" element={<FileManager />} />
               
               {/* Newsletter Management */}
               <Route path="newsletter" element={<NewsletterManager />} />
               
               {/* Other Admin Routes */}
-              <Route path="authors" element={<div>Authors Management - Coming Soon</div>} />
               <Route path="settings" element={<div>Settings - Coming Soon</div>} />
             </Route>
             

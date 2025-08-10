@@ -18,6 +18,7 @@ import {
   Quote,
   Code
 } from 'lucide-react';
+import { adminAPI } from '../../../services/api';
 
 const PostForm = () => {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ const PostForm = () => {
     content: '',
     excerpt: '',
     featuredImage: '',
-    category: '',
+    categoryId: '',
     tags: [],
     status: 'draft',
     publishedAt: '',
@@ -40,67 +41,122 @@ const PostForm = () => {
     metaKeywords: ''
   });
 
-  const [categories] = useState([
-    'Technology',
-    'Startups',
-    'Security',
-    'AI & Machine Learning',
-    'Mobile Development',
-    'Web Development',
-    'Cloud Computing'
-  ]);
-
-  const [availableTags] = useState([
-    'React', 'JavaScript', 'AI', 'Blockchain', 'Cybersecurity', 
-    'Cloud', 'Mobile', 'Startup', 'Funding', 'Innovation'
-  ]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [availableTags, setAvailableTags] = useState([]);
 
   const [newTag, setNewTag] = useState('');
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState('');
 
+  // Fetch categories and post data
   useEffect(() => {
-    if (isEditing) {
-      // Load post data for editing
-      const mockPost = {
-        id: 1,
-        title: "The Future of Artificial Intelligence in Tech Industry",
-        slug: "future-ai-tech-industry",
-        content: `# The Future of AI in Tech
+    const loadData = async () => {
+      console.log('🚀 PostForm useEffect triggered:', { isEditing, id });
+      
+      // Always fetch categories and tags
+      await fetchCategories();
+      await fetchAvailableTags();
+      
+      // Only fetch post data if editing
+      if (isEditing && id) {
+        await fetchPost();
+      } else if (isEditing && !id) {
+        console.warn('⚠️ Edit mode but no ID provided');
+        setError('No post ID provided for editing');
+      }
+    };
+    
+    loadData();
+  }, [isEditing, id]);
 
-Artificial Intelligence is revolutionizing the technology industry at an unprecedented pace. From machine learning algorithms to neural networks, AI is reshaping how we approach problem-solving and innovation.
+  const fetchCategories = async () => {
+    try {
+      console.log('🔍 Fetching categories...');
+      const categoriesData = await adminAPI.getCategories();
+      console.log('✅ Categories received:', categoriesData);
+      setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+    } catch (error) {
+      console.error('❌ Error fetching categories:', error);
+      setError('Failed to load categories');
+    }
+  };
 
-## Key Areas of Impact
+  const fetchAvailableTags = async () => {
+    try {
+      console.log('🔍 Fetching available tags...');
+      // Fetch tags from API - this could be a separate endpoint or extracted from existing posts
+      const tagsData = await adminAPI.getTags();
+      console.log('✅ Tags received:', tagsData);
+      
+      if (Array.isArray(tagsData) && tagsData.length > 0) {
+        setAvailableTags(tagsData);
+      } else {
+        console.log('📝 Using fallback tags (API returned empty or non-array)');
+        // Fallback to common tech tags if API doesn't return any tags
+        setAvailableTags([
+          'React', 'JavaScript', 'AI', 'Blockchain', 'Cybersecurity', 
+          'Cloud', 'Mobile', 'Startup', 'Funding', 'Innovation'
+        ]);
+      }
+    } catch (error) {
+      console.error('❌ Error fetching tags:', error);
+      console.log('📝 Using fallback tags due to error');
+      // Use fallback tags if API call fails
+      setAvailableTags([
+        'React', 'JavaScript', 'AI', 'Blockchain', 'Cybersecurity', 
+        'Cloud', 'Mobile', 'Startup', 'Funding', 'Innovation'
+      ]);
+    }
+  };
 
-### 1. Automation and Efficiency
-AI-powered automation is streamlining processes across various sectors, reducing human error and increasing productivity.
-
-### 2. Data Analysis and Insights
-Advanced analytics powered by AI are providing deeper insights into user behavior and market trends.
-
-### 3. Personalization
-AI enables highly personalized user experiences, from content recommendations to customized interfaces.
-
-## The Road Ahead
-
-As we move forward, the integration of AI into everyday technology will become even more seamless and powerful. Companies that embrace this transformation will lead the way in innovation.`,
-        excerpt: "Exploring how AI is reshaping the technology landscape and what it means for developers and businesses.",
-        featuredImage: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800",
-        category: "Technology",
-        tags: ["AI", "Technology", "Innovation"],
-        status: "published",
-        publishedAt: "2024-01-15T10:30:00",
-        featured: true,
-        allowComments: true,
-        metaDescription: "Discover how artificial intelligence is transforming the tech industry and what the future holds.",
-        metaKeywords: "AI, artificial intelligence, technology, innovation, machine learning"
+  const fetchPost = async () => {
+    try {
+      setLoading(true);
+      console.log('🔍 Fetching post with ID:', id);
+      
+      const post = await adminAPI.getPostById(id);
+      console.log('✅ Post data received:', post);
+      
+      // Map the API response to form data structure
+      const mappedData = {
+        title: post.title || '',
+        slug: post.slug || '',
+        content: post.content || '',
+        excerpt: post.summary || post.excerpt || '', // Handle both summary and excerpt
+        featuredImage: post.imageUrl || post.featuredImage || '',
+        categoryId: post.categoryId || post.category?.id || '',
+        tags: post.tags ? (Array.isArray(post.tags) ? post.tags : post.tags.split(',').map(tag => tag.trim())) : [],
+        status: post.status || 'draft',
+        publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString().slice(0, 16) : '',
+        featured: post.featured || false,
+        allowComments: post.allowComments !== false,
+        metaDescription: post.metaDescription || '',
+        metaKeywords: post.metaKeywords || ''
       };
       
-      setFormData(mockPost);
-      setImagePreview(mockPost.featuredImage);
+      console.log('📝 Mapped form data:', mappedData);
+      setFormData(mappedData);
+      
+      // Set image preview if available
+      const imageUrl = post.imageUrl || post.featuredImage || '';
+      setImagePreview(imageUrl);
+      console.log('🖼️ Image preview set to:', imageUrl);
+      
+    } catch (error) {
+      console.error('❌ Error fetching post:', error);
+      console.error('❌ Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data
+      });
+      setError(`Failed to load post: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
-  }, [isEditing, id]);
+  };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -150,21 +206,175 @@ As we move forward, the integration of AI into everyday technology will become e
   };
 
   const handleSave = async (status = 'draft') => {
-    setSaving(true);
+    // Validate required fields
+    if (!formData.title.trim()) {
+      setError('Title is required');
+      return;
+    }
     
-    const postData = {
-      ...formData,
-      status,
-      publishedAt: status === 'published' ? new Date().toISOString() : formData.publishedAt
-    };
+    if (!formData.content.trim()) {
+      setError('Content is required');
+      return;
+    }
 
+    setSaving(true);
+    setError(null);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Saving post:', postData);
+      // Get current user info for userId (optional - let backend handle if not available)
+      let currentUser;
+      try {
+        currentUser = await adminAPI.getCurrentUser();
+        console.log('✅ Current user found:', currentUser);
+      } catch (userError) {
+        console.warn('Could not fetch current user, letting backend assign user:', userError.message);
+      }
+
+      // Match backend structure exactly - use summary instead of excerpt, imageUrl instead of featuredImage
+      const postData = {
+        title: formData.title.trim(),
+        content: formData.content.trim(),
+        summary: formData.excerpt.trim() || null, // Backend expects 'summary' not 'excerpt'
+        imageUrl: formData.featuredImage || null, // Backend expects 'imageUrl' not 'featuredImage'
+        categoryId: formData.categoryId ? parseInt(formData.categoryId) : null, // Ensure proper integer or null
+        tags: Array.isArray(formData.tags) && formData.tags.length > 0 
+          ? formData.tags.join(',') 
+          : null, // Convert array to comma-separated string or null if empty
+        type: 'update', // Backend expects type field
+        status: status || 'draft', // Ensure status is never undefined
+        featured: Boolean(formData.featured), // Ensure boolean
+        allowComments: Boolean(formData.allowComments), // Ensure boolean
+        externalUrl: formData.externalUrl?.trim() || null,
+        externalSource: formData.externalSource?.trim() || null,
+        publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : null
+        // Remove fields not expected by backend: slug, metaDescription, metaKeywords
+        // Remove authorId - now using userId with new Identity system
+      };
+
+      // Only include userId if we have a real user (not the mock fallback)
+      if (currentUser && currentUser.email !== 'test@techbirds.com') {
+        const userId = parseInt(currentUser.id);
+        if (isNaN(userId) || userId <= 0) {
+          console.error('❌ Invalid user ID:', currentUser.id);
+          setError('❌ Invalid user session. Please log in again.');
+          return;
+        }
+        postData.userId = userId; // ✨ NEW: Using userId instead of authorId
+        console.log('📝 Using authenticated user:', { name: currentUser.name, id: userId });
+      } else {
+        console.log('📝 No valid user found - backend will need to assign user from authentication context');
+        // Don't include userId - let backend handle it
+      }
+
+      // Validate data before sending
+      if (!postData.title || postData.title.length > 200) {
+        setError('❌ Title is required and must be less than 200 characters');
+        return;
+      }
+      if (!postData.content || postData.content.length > 50000) {
+        setError('❌ Content is required and must be less than 50,000 characters');
+        return;
+      }
+      if (postData.summary && postData.summary.length > 500) {
+        setError('❌ Summary must be less than 500 characters');
+        return;
+      }
+
+      console.log('📝 Sending post data:', postData);
+
+      // Create a clean copy with only non-null values to avoid potential backend issues
+      const cleanPostData = Object.fromEntries(
+        Object.entries(postData).filter(([key, value]) => value !== null && value !== '' && value !== undefined)
+      );
+      
+      console.log('🧹 Clean post data (nulls removed):', cleanPostData);
+
+      let result;
+      if (isEditing) {
+        console.log('🔄 Updating existing post with ID:', id);
+        result = await adminAPI.updatePost(id, cleanPostData);
+      } else {
+        console.log('✨ Creating new post');
+        result = await adminAPI.createPost(cleanPostData);
+      }
+
+      console.log('✅ Post saved successfully:', result);
       navigate('/admin/posts');
     } catch (error) {
-      console.error('Error saving post:', error);
+      console.error('❌ Post save failed:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      // Handle specific error messages
+      if (error.response?.status === 405) {
+        if (isEditing) {
+          setError('❌ Backend API Missing: The PUT /api/admin/posts/{id} endpoint is not implemented. Your frontend is ready - please ask your backend developer to add this endpoint to update posts.');
+        } else {
+          setError('❌ Backend API Missing: The POST /api/admin/posts endpoint is not implemented. Your frontend is ready - please ask your backend developer to add this endpoint to save posts.');
+        }
+      } else if (error.response?.status === 400) {
+        const errorData = error.response?.data;
+        let errorMessage = 'Bad Request: Invalid data provided';
+        
+        // Handle specific backend validation errors
+        if (typeof errorData === 'string') {
+          if (errorData.includes('Author with ID') && errorData.includes('not found')) {
+            errorMessage = `❌ Author Error: ${errorData}\n\n💡 The user ID being used doesn't exist in the database. This usually means there's an authentication issue.`;
+          } else if (errorData.includes('Author with ID') && errorData.includes('not active')) {
+            errorMessage = `❌ Author Error: ${errorData}\n\n💡 Your user account is inactive. Please contact an administrator.`;
+          } else if (errorData.includes('Author ID is required')) {
+            errorMessage = `❌ Author Error: ${errorData}\n\n💡 No user ID provided. Please log in again to refresh your session.`;
+          } else {
+            errorMessage = `Bad Request: ${errorData}`;
+          }
+        } else if (errorData?.message) {
+          if (errorData.message.includes('Author with ID') && errorData.message.includes('not found')) {
+            errorMessage = `❌ Author Error: ${errorData.message}\n\n💡 The user ID being used doesn't exist in the database. This usually means there's an authentication issue.`;
+          } else if (errorData.message.includes('Author with ID') && errorData.message.includes('not active')) {
+            errorMessage = `❌ Author Error: ${errorData.message}\n\n💡 Your user account is inactive. Please contact an administrator.`;
+          } else if (errorData.message.includes('Author ID is required')) {
+            errorMessage = `❌ Author Error: ${errorData.message}\n\n💡 No user ID provided. Please log in again to refresh your session.`;
+          } else {
+            errorMessage = `Bad Request: ${errorData.message}`;
+          }
+        } else if (errorData?.error) {
+          errorMessage = `Bad Request: ${errorData.error}`;
+        } else if (errorData?.errors) {
+          // Handle validation errors array
+          const errors = Array.isArray(errorData.errors) 
+            ? errorData.errors.join(', ') 
+            : JSON.stringify(errorData.errors);
+          errorMessage = `Validation Error: ${errors}`;
+        }
+        
+        setError(`${errorMessage}\n\nTip: Make sure you have selected a valid category and all required fields are filled.`);
+      } else if (error.response?.status === 401) {
+        setError('❌ Authentication Error: Please login as an admin to create posts.');
+      } else if (error.response?.status === 403) {
+        setError('❌ Access Denied: You do not have permission to create posts.');
+      } else if (error.response?.status === 500) {
+        const errorData = error.response?.data;
+        let errorDetails = '';
+        
+        if (errorData?.message) {
+          errorDetails = errorData.message;
+        }
+        if (errorData?.error && errorData.error !== errorData.message) {
+          errorDetails += errorDetails ? ` Details: ${errorData.error}` : errorData.error;
+        }
+        
+        // Check if 500 error might be related to author validation that wasn't caught as 400
+        if (errorDetails.toLowerCase().includes('author') && errorDetails.toLowerCase().includes('not found')) {
+          setError(`❌ Author Validation Error: ${errorDetails}\n\n🔧 This indicates an authentication issue. Please log out and log back in to refresh your session.`);
+        } else {
+          setError(`❌ Server Error: ${errorDetails || 'The backend server encountered an error.'}\n\n🔧 This is likely a backend database issue. The frontend data is correct, but the backend cannot save it to the database.`);
+        }
+      } else {
+        setError(`❌ Failed to save post: ${error.message}\n\nPlease check the browser console for more details.`);
+      }
     } finally {
       setSaving(false);
     }
@@ -208,6 +418,17 @@ As we move forward, the integration of AI into everyday technology will become e
     setFormData(prev => ({ ...prev, content: newContent }));
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -246,6 +467,20 @@ As we move forward, the integration of AI into everyday technology will become e
           </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
@@ -289,18 +524,19 @@ As we move forward, the integration of AI into everyday technology will become e
               </div>
             </div>
 
-            {/* Excerpt */}
+            {/* Summary */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Excerpt
+                Summary *
               </label>
               <textarea
                 name="excerpt"
                 value={formData.excerpt}
                 onChange={handleInputChange}
                 rows={3}
-                placeholder="Brief description of the post..."
+                placeholder="Brief summary of the post..."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                required
               />
             </div>
 
@@ -534,14 +770,16 @@ As we move forward, the integration of AI into everyday technology will become e
           <div className="bg-white p-6 rounded-lg shadow">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Category</h3>
             <select
-              name="category"
-              value={formData.category}
+              name="categoryId"
+              value={formData.categoryId}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="">Select a category</option>
               {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
               ))}
             </select>
           </div>
