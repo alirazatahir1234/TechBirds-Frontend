@@ -27,8 +27,8 @@ const HomePage = () => {
         ]);
 
         setFeaturedArticles(featured);
-        setLatestArticles(latest.articles || latest);
-        setTrendingArticles(trending);
+        setLatestArticles(latest.posts || latest.data || latest);
+        setTrendingArticles(trending.posts || trending.data || trending);
       } catch (err) {
         setError('Failed to load articles. Please try again later.');
         console.error('Error fetching homepage data:', err);

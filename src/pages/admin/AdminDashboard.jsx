@@ -12,7 +12,7 @@ import {
   AlertCircle,
   RefreshCw
 } from 'lucide-react';
-import { articleAPI, userAPI, categoryAPI, adminAPI, statsAPI } from '../../services/api';
+import { postsAPI, userAPI, categoryAPI, adminAPI, statsAPI } from '../../services/api';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -33,18 +33,19 @@ const AdminDashboard = () => {
     
     try {
       // Fetch data from multiple endpoints
-      const [articlesResponse, usersResponse, categoriesResponse] = await Promise.allSettled([
-        articleAPI.getArticles(1, 1),
+      const [postsResponse, usersResponse, categoriesResponse] = await Promise.allSettled([
+        postsAPI.getPosts({ page: 1, pageSize: 1 }),
         userAPI.getUsers({ page: 1, limit: 1 }),
         categoryAPI.getCategories()
       ]);
 
       // Debug response structure
-      console.log('🔍 API Responses:', { articlesResponse, usersResponse, categoriesResponse });
+      console.log('🔍 API Responses:', { postsResponse, usersResponse, categoriesResponse });
 
       // Process responses
-      const articlesData = articlesResponse.status === 'fulfilled' ? articlesResponse.value : [];
+      const postsData = postsResponse.status === 'fulfilled' ? postsResponse.value : [];
       const usersData = usersResponse.status === 'fulfilled' ? usersResponse.value : [];
+      const categoriesData = categoriesResponse.status === 'fulfilled' ? categoriesResponse.value : [];
 
       // Try to get site stats if available
       let siteStats = { totalViews: 0 };
@@ -56,11 +57,11 @@ const AdminDashboard = () => {
 
       // Update state with real data
       setStats({
-        totalArticles: articlesData.pagination?.total || articlesData.articles?.length || 0,
+        totalArticles: postsData.pagination?.total || postsData.posts?.length || 0,
         totalUsers: Array.isArray(usersData) ? usersData.length : usersData.total || 0,
         totalCategories: Array.isArray(categoriesData) ? categoriesData.length : categoriesData.total || 0,
         totalViews: siteStats.totalViews || 0,
-        recentArticles: articlesData.articles?.slice(0, 5) || [],
+        recentArticles: postsData.posts?.slice(0, 5) || [],
         recentActivity: [] // Will be populated when we have activity tracking
       });
 

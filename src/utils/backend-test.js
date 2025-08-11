@@ -30,24 +30,24 @@ export const testBackendConnection = async () => {
 
     // Test articles endpoint
     try {
-      const response = await articleAPI.getArticles(1, 5);
-      results.endpoints.articles = true;
+      const articles = await articleAPI.getArticles(1, 5);
+      results.endpoints.posts = true;
       results.connection = true;
       console.log('✅ Articles endpoint working');
     } catch (error) {
-      results.endpoints.articles = false;
+      results.endpoints.posts = false;
       if (error.code === 'ERR_NETWORK') {
         results.errors.push('❌ Backend server not running');
         results.suggestions.push('Start your .NET backend: dotnet run');
         results.suggestions.push('Check if backend is running on correct port');
       } else if (error.response?.status === 404) {
-        results.errors.push('❌ Articles endpoint not found');
-        results.suggestions.push('Create ArticlesController in your backend');
+        results.errors.push('❌ Posts endpoint not found');
+        results.suggestions.push('Create PostsController in your backend');
       } else if (error.message.includes('CORS')) {
         results.errors.push('❌ CORS policy blocking requests');
         results.suggestions.push('Add CORS configuration to your .NET backend');
       } else {
-        results.errors.push(`❌ Articles endpoint failed: ${error.message}`);
+        results.errors.push(`❌ Posts endpoint failed: ${error.message}`);
       }
     }
 

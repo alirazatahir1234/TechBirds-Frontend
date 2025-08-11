@@ -23,9 +23,10 @@ const ArticlePage = () => {
         await statsAPI.trackArticleView(id);
 
         // Fetch related articles
-        if (articleData.category) {
-          const related = await articleAPI.getArticlesByCategory(articleData.category, 1, 4);
-          setRelatedArticles(related.articles?.filter(a => a.id !== parseInt(id)) || []);
+        if (articleData.categoryId || articleData.category) {
+          const categoryId = articleData.categoryId || articleData.category;
+          const related = await articleAPI.getArticlesByCategory(categoryId, 1, 4);
+          setRelatedArticles(related.posts?.filter(a => a.id !== parseInt(id)) || related.filter(a => a.id !== parseInt(id)) || []);
         }
       } catch (err) {
         setError('Failed to load article. Please try again later.');

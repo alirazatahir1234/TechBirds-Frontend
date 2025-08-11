@@ -24,8 +24,8 @@ const CategoryPage = () => {
         ]);
 
         setCategory(categoryData);
-        setArticles(articlesData.articles || articlesData);
-        setHasMore((articlesData.articles || articlesData).length === 12);
+        setArticles(articlesData.posts || articlesData.data || articlesData);
+        setHasMore((articlesData.posts || articlesData.data || articlesData).length === 12);
         setPage(1);
       } catch (err) {
         setError('Failed to load category. Please try again later.');
@@ -66,7 +66,7 @@ const CategoryPage = () => {
     try {
       const nextPage = page + 1;
       const newArticles = await articleAPI.getArticlesByCategory(slug, nextPage, 12);
-      const articleList = newArticles.articles || newArticles;
+      const articleList = newArticles.posts || newArticles.data || newArticles;
       
       setArticles(prev => [...prev, ...articleList]);
       setPage(nextPage);

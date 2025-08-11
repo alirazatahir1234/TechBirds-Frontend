@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import toast, { Toaster } from 'react-hot-toast';
 import { 
   ArrowLeft, 
   Save, 
@@ -16,6 +17,13 @@ import {
 import { userAPI } from '../../../services/api';
 
 export default function CreateUser() {
+  const navigate = useNavigate();
+  // Remove avatar handler
+  const removeAvatar = () => {
+    setFormData(prev => ({ ...prev, avatar: null }));
+    setAvatarPreview(null);
+  };
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -31,7 +39,6 @@ export default function CreateUser() {
     linkedin: '',
     avatar: null
   });
-  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(null);
@@ -49,7 +56,6 @@ export default function CreateUser() {
     const file = e.target.files[0];
     if (file) {
       setFormData(prev => ({ ...prev, avatar: file }));
-      
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -59,59 +65,71 @@ export default function CreateUser() {
     }
   };
 
-  const removeAvatar = () => {
-    setFormData(prev => ({ ...prev, avatar: null }));
-    setAvatarPreview(null);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+    // Password validation rules
+    const password = formData.password;
+    const passwordErrors = [];
+    if (password !== formData.confirmPassword) {
+      passwordErrors.push('Passwords do not match!');
+    }
+    if (!/[A-Z]/.test(password)) {
+      passwordErrors.push('Password must have at least one uppercase letter.');
+    }
+    if (!/[a-z]/.test(password)) {
+      passwordErrors.push('Password must have at least one lowercase letter.');
+    }
+    if (!/[0-9]/.test(password)) {
+      passwordErrors.push('Password must have at least one digit.');
+    }
+    if (!/[^A-Za-z0-9]/.test(password)) {
+      passwordErrors.push('Password must have at least one special character.');
+    }
+    if (password.length < 8) {
+      passwordErrors.push('Password must be at least 8 characters long.');
+    }
+    if (passwordErrors.length > 0) {
+      alert(passwordErrors.join('\n'));
       return;
     }
 
     setIsLoading(true);
-    
     try {
-      console.log('🚀 Creating user via API:', formData);
-      
+      // Transform the data to match backend expectations
+      const userData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        bio: formData.bio || null,
+        specialization: formData.specialization || null,
+        role: formData.role,
+        isActive: formData.status?.toLowerCase() === 'active',
+        website: formData.website || null,
+        twitter: formData.twitter || null,
+        linkedIn: formData.linkedin || null,
+        avatar: typeof formData.avatar === 'string' ? formData.avatar : null
+      };
       // Call the actual API to create the user
-      const newUser = await userAPI.createUser(formData);
-      console.log('✅ User created successfully:', newUser);
-      
-      alert('User created successfully! They can now login with their credentials.');
-      
-      // Reset form
-      setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        password: '',
-        confirmPassword: '',
-        bio: '',
-        specialization: '',
-        role: 'User',
-        status: 'Active',
-        website: '',
-        twitter: '',
-        linkedin: '',
-        avatar: null
-      });
-      setAvatarPreview(null);
-      
+      const newUser = await userAPI.createUser(userData);
+      toast.success('User created successfully!');
+      setTimeout(() => {
+        navigate('/admin/users');
+      }, 1500);
     } catch (error) {
-      console.error('❌ Error creating user:', error);
-      const errorMessage = error.message || error.originalError?.message || 'Failed to create user. Please try again.';
-      alert(`Failed to create user: ${errorMessage}`);
-    } finally {
+      if (error.response) {
+        alert(`Failed to create user: ${JSON.stringify(error.response.data)}`);
+      } else {
+        alert(`Failed to create user: ${error.message}`);
+      }
       setIsLoading(false);
     }
   };
 
+
   return (
     <div className="max-w-4xl mx-auto">
+      <Toaster position="top-right" />
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-4 mb-4">

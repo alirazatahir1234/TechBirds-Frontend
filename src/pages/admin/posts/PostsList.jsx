@@ -66,10 +66,15 @@ const PostsList = () => {
           currentPage: response.page || 1,
           limit: response.pageSize || 10
         });
-      } else if (response.articles && response.pagination) {
-        // Paginated response with articles
-        setPosts(response.articles || []);
-        setPagination(response.pagination);
+      } else if (response.posts && response.pagination) {
+        // Structured response with pagination
+        setPosts(response.posts || []);
+        setPagination({
+          total: response.pagination.total || 0,
+          totalPages: response.pagination.totalPages || 0,
+          currentPage: response.pagination.page || 1,
+          limit: response.pagination.pageSize || 10
+        });
       } else if (Array.isArray(response)) {
         // Simple array response
         setPosts(response);

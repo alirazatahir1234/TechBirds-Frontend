@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search, Clock, User, Filter } from 'lucide-react';
-import { articleAPI } from '../services/api';
+import { searchAPI } from '../services/api';
 import { formatDistanceToNow } from 'date-fns';
 
 const SearchPage = () => {
@@ -40,8 +40,8 @@ const SearchPage = () => {
       setLoading(true);
       setError(null);
       
-      const results = await articleAPI.searchArticles(searchQuery, pageNum, 12);
-      const articleList = results.articles || results;
+      const results = await searchAPI.searchArticles(searchQuery, pageNum, 12);
+      const articleList = results.posts || results.data || results;
       
       if (reset) {
         setArticles(articleList);

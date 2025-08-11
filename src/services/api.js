@@ -59,36 +59,46 @@ api.interceptors.response.use(
   }
 );
 
-// Article API functions
+// Article API functions (now uses posts endpoint)
 export const articleAPI = {
   // Get all articles with pagination
   getArticles: async (page = 1, limit = 10, category = '', search = '') => {
     const params = new URLSearchParams({
       page: page.toString(),
-      limit: limit.toString(),
-      ...(category && { category }),
+      pageSize: limit.toString(),
+      status: 'published',
+      ...(category && { categoryId: category }),
       ...(search && { search }),
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
     
-    const response = await api.get(`/articles?${params}`);
+    const response = await api.get(`/posts?${params}`);
     return response.data;
   },
 
   // Get featured articles
   getFeaturedArticles: async () => {
-    const response = await api.get('/articles/featured');
+    const response = await api.get('/posts/featured');
     return response.data;
   },
 
   // Get trending articles
   getTrendingArticles: async (limit = 5) => {
-    const response = await api.get(`/articles/trending?limit=${limit}`);
+    const params = new URLSearchParams({
+      page: '1',
+      pageSize: limit.toString(),
+      status: 'published',
+      sortBy: 'views',
+      sortOrder: 'desc'
+    });
+    const response = await api.get(`/posts?${params}`);
     return response.data;
   },
 
   // Get article by ID
   getArticleById: async (id) => {
-    const response = await api.get(`/articles/${id}`);
+    const response = await api.get(`/posts/${id}`);
     return response.data;
   },
 
@@ -96,12 +106,18 @@ export const articleAPI = {
   createArticle: async (articleData) => {
     // Map authorId to userId for new system compatibility
     const mappedData = {
-      ...articleData,
-      userId: articleData.userId || articleData.authorId
+      title: articleData.title,
+      content: articleData.content,
+      summary: articleData.summary || articleData.excerpt,
+      userId: articleData.userId || articleData.authorId,
+      categoryId: articleData.categoryId || articleData.category,
+      type: 'article',
+      allowComments: articleData.allowComments !== false,
+      tags: articleData.tags || '',
+      featured: articleData.featured || false
     };
-    delete mappedData.authorId; // Remove old field
     
-    const response = await api.post('/articles', mappedData);
+    const response = await api.post('/posts', mappedData);
     return response.data;
   },
 
@@ -109,18 +125,24 @@ export const articleAPI = {
   updateArticle: async (id, articleData) => {
     // Map authorId to userId for new system compatibility
     const mappedData = {
-      ...articleData,
-      userId: articleData.userId || articleData.authorId
+      title: articleData.title,
+      content: articleData.content,
+      summary: articleData.summary || articleData.excerpt,
+      userId: articleData.userId || articleData.authorId,
+      categoryId: articleData.categoryId || articleData.category,
+      type: 'article',
+      allowComments: articleData.allowComments !== false,
+      tags: articleData.tags || '',
+      featured: articleData.featured || false
     };
-    delete mappedData.authorId; // Remove old field
     
-    const response = await api.put(`/articles/${id}`, mappedData);
+    const response = await api.put(`/posts/${id}`, mappedData);
     return response.data;
   },
 
   // Delete article
   deleteArticle: async (id) => {
-    const response = await api.delete(`/articles/${id}`);
+    const response = await api.delete(`/posts/${id}`);
     return response.data;
   },
 };
@@ -211,9 +233,13 @@ export const categoryAPI = {
   getArticlesByCategory: async (categoryId, page = 1, limit = 10) => {
     const params = new URLSearchParams({
       page: page.toString(),
-      limit: limit.toString(),
+      pageSize: limit.toString(),
+      status: 'published',
+      categoryId: categoryId,
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
-    const response = await api.get(`/categories/${categoryId}/articles?${params}`);
+    const response = await api.get(`/posts?${params}`);
     return response.data;
   },
 
@@ -257,7 +283,7 @@ export const userAPI = {
     if (params.sortBy) queryParams.set('sortBy', params.sortBy);
     if (params.sortOrder) queryParams.set('sortOrder', params.sortOrder);
     
-    const response = await api.get(`/Users?${queryParams.toString()}`);
+    const response = await api.get(`/users?${queryParams.toString()}`);
     return response.data;
   },
 
@@ -283,27 +309,31 @@ export const userAPI = {
   getArticlesByUser: async (userId, page = 1, limit = 10) => {
     const params = new URLSearchParams({
       page: page.toString(),
-      limit: limit.toString(),
+      pageSize: limit.toString(),
+      status: 'published',
+      userId: userId,
+      sortBy: 'createdAt',
+      sortOrder: 'desc'
     });
-    const response = await api.get(`/users/${userId}/articles?${params}`);
+    const response = await api.get(`/posts?${params}`);
     return response.data;
   },
 
   // Create user (admin only)
   createUser: async (userData) => {
-    const response = await api.post('/Users', userData);
+    const response = await api.post('/users', userData);
     return response.data;
   },
 
   // Update user (admin only or self-update)
   updateUser: async (id, userData) => {
-    const response = await api.put(`/Users/${id}`, userData);
+    const response = await api.put(`/users/${id}`, userData);
     return response.data;
   },
 
   // Delete user (admin only)
   deleteUser: async (id) => {
-    const response = await api.delete(`/Users/${id}`);
+    const response = await api.delete(`/users/${id}`);
     return response.data;
   },
 
@@ -545,18 +575,19 @@ export const searchAPI = {
   // Global search
   globalSearch: async (query, filters = {}) => {
     const params = new URLSearchParams({
-      q: query,
-      type: filters.type || '', // 'articles' or 'posts'
+      search: query,
+      type: filters.type || 'article', // Default to article type posts
       page: filters.page || 1,
       pageSize: filters.pageSize || 10,
+      status: 'published'
     });
-    const response = await api.get(`/search?${params}`);
+    const response = await api.get(`/posts?${params}`);
     return response.data;
   },
 
   // Search articles (legacy)
   searchArticles: async (query, page = 1, limit = 10) => {
-    return this.globalSearch(query, { type: 'articles', page, pageSize: limit });
+    return this.globalSearch(query, { type: 'article', page, pageSize: limit });
   },
 };
 
@@ -564,13 +595,13 @@ export const searchAPI = {
 export const commentsAPI = {
   // Get article comments (no auth required)
   getArticleComments: async (articleId) => {
-    const response = await api.get(`/comments/article/${articleId}`);
+    const response = await api.get(`/posts/${articleId}/comments`);
     return response.data;
   },
 
   // Get post comments (no auth required)
   getPostComments: async (postId) => {
-    const response = await api.get(`/comments/post/${postId}`);
+    const response = await api.get(`/posts/${postId}/comments`);
     return response.data;
   },
 
@@ -588,11 +619,9 @@ export const commentsAPI = {
       content: commentData.content.trim(),
     };
 
-    // Either articleId OR postId, not both
-    if (commentData.articleId) {
-      requestData.articleId = commentData.articleId;
-    } else if (commentData.postId) {
-      requestData.postId = commentData.postId;
+    // Either articleId OR postId, both map to postId in the new system
+    if (commentData.articleId || commentData.postId) {
+      requestData.postId = commentData.postId || commentData.articleId;
     } else {
       throw new Error('Either articleId or postId is required');
     }
@@ -654,7 +683,7 @@ export const statsAPI = {
 
   // Track article view
   trackArticleView: async (articleId) => {
-    const response = await api.post(`/stats/articles/${articleId}/view`);
+    const response = await api.post(`/posts/${articleId}/view`);
     return response.data;
   },
 };
@@ -895,7 +924,7 @@ export const adminAPI = {
       return await userAPI.getArticlesByUser(id, params.page, params.limit);
     } catch (error) {
       console.warn('New users API not available, falling back to legacy authors API');
-      const response = await api.get(`/authors/${id}/articles`, { params });
+      const response = await api.get(`/authors/${id}/posts`, { params });
       return response.data;
     }
   },
@@ -920,15 +949,15 @@ export const adminAPI = {
     }
   },
 
-  // Articles management (using the main article endpoints)
+  // Articles management (using posts endpoints)
   getPosts: async (params = {}) => {
     console.log('🔍 AdminAPI.getPosts called with params:', params);
     
-    // For admin posts, use the admin endpoint if available, otherwise fallback to regular articles
+    // Use posts endpoint directly
     try {
-      console.log('📡 Trying /admin/posts endpoint...');
-      const response = await api.get('/admin/posts', { params });
-      console.log('✅ Admin posts response received:', {
+      console.log('📡 Trying /posts endpoint...');
+      const response = await api.get('/posts', { params });
+      console.log('✅ Posts response received:', {
         status: response.status,
         dataType: Array.isArray(response.data) ? 'Array' : typeof response.data,
         length: Array.isArray(response.data) ? response.data.length : 'N/A',
@@ -936,21 +965,21 @@ export const adminAPI = {
       });
       return response.data;
     } catch (error) {
-      console.error('❌ Admin posts endpoint failed:', error.response?.status, error.message);
+      console.error('❌ Posts endpoint failed:', error.response?.status, error.message);
       
-      // Fallback to regular articles endpoint
+      // Fallback to admin/posts if available
       try {
-        console.log('🔄 Trying /articles endpoint as fallback...');
-        const response = await api.get('/articles', { params });
-        console.log('✅ Articles response received:', {
+        console.log('🔄 Trying /admin/posts endpoint as fallback...');
+        const response = await api.get('/admin/posts', { params });
+        console.log('✅ Admin posts response received:', {
           status: response.status,
           dataType: Array.isArray(response.data) ? 'Array' : typeof response.data,
           length: Array.isArray(response.data) ? response.data.length : 'N/A'
         });
         return response.data;
-      } catch (articlesError) {
-        console.error('❌ Both endpoints failed. Articles error:', articlesError.message);
-        throw articlesError;
+      } catch (adminError) {
+        console.error('❌ Both endpoints failed. Admin posts error:', adminError.message);
+        throw adminError;
       }
     }
   },
@@ -967,26 +996,32 @@ export const adminAPI = {
     
     // Map authorId to userId for new system compatibility
     const mappedData = {
-      ...postData,
-      userId: postData.userId || postData.authorId
+      title: postData.title,
+      content: postData.content,
+      summary: postData.summary || postData.excerpt,
+      userId: postData.userId || postData.authorId,
+      categoryId: postData.categoryId || postData.category,
+      type: postData.type || 'article',
+      allowComments: postData.allowComments !== false,
+      tags: postData.tags || '',
+      featured: postData.featured || false
     };
-    delete mappedData.authorId; // Remove old field
     
-    // Try admin posts endpoint first, then admin articles
+    // Try posts endpoint first, then admin posts
     try {
-      const response = await api.post('/admin/posts', mappedData);
+      const response = await api.post('/posts', mappedData);
       return response.data;
     } catch (error) {
-      console.error('Admin posts creation failed, trying admin articles endpoint');
+      console.error('Posts creation failed, trying admin posts endpoint');
       
       if (error.response?.status === 404) {
-        // Try admin articles endpoint as fallback
+        // Try admin posts endpoint as fallback
         try {
-          const response = await api.post('/admin/articles', mappedData);
+          const response = await api.post('/admin/posts', mappedData);
           return response.data;
-        } catch (articleError) {
-          console.error('Both admin posts and articles creation failed');
-          throw articleError;
+        } catch (adminError) {
+          console.error('Both posts and admin posts creation failed');
+          throw adminError;
         }
       }
       throw error;
@@ -998,28 +1033,34 @@ export const adminAPI = {
     
     // Map authorId to userId for new system compatibility
     const mappedData = {
-      ...postData,
-      userId: postData.userId || postData.authorId
+      title: postData.title,
+      content: postData.content,
+      summary: postData.summary || postData.excerpt,
+      userId: postData.userId || postData.authorId,
+      categoryId: postData.categoryId || postData.category,
+      type: postData.type || 'article',
+      allowComments: postData.allowComments !== false,
+      tags: postData.tags || '',
+      featured: postData.featured || false
     };
-    delete mappedData.authorId; // Remove old field
     
     try {
-      console.log('📡 Trying PUT /admin/posts/{id} endpoint...');
-      const response = await api.put(`/admin/posts/${id}`, mappedData);
+      console.log('📡 Trying PUT /posts/{id} endpoint...');
+      const response = await api.put(`/posts/${id}`, mappedData);
       console.log('✅ Update post response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Admin posts PUT failed:', error.response?.status, error.message);
+      console.error('❌ Posts PUT failed:', error.response?.status, error.message);
       
       if (error.response?.status === 404) {
         try {
-          console.log('🔄 Trying PUT /admin/articles/{id} endpoint as fallback...');
-          const response = await api.put(`/admin/articles/${id}`, mappedData);
-          console.log('✅ Update articles response:', response.data);
+          console.log('🔄 Trying PUT /admin/posts/{id} endpoint as fallback...');
+          const response = await api.put(`/admin/posts/${id}`, mappedData);
+          console.log('✅ Update admin posts response:', response.data);
           return response.data;
-        } catch (articlesError) {
-          console.error('❌ Admin articles PUT also failed:', articlesError.response?.status, articlesError.message);
-          throw articlesError;
+        } catch (adminError) {
+          console.error('❌ Admin posts PUT also failed:', adminError.response?.status, adminError.message);
+          throw adminError;
         }
       } else if (error.response?.status === 405) {
         console.error('❌ PUT method not allowed - backend does not support updating posts');
@@ -1032,12 +1073,12 @@ export const adminAPI = {
 
   deletePost: async (id) => {
     try {
-      const response = await api.delete(`/admin/posts/${id}`);
+      const response = await api.delete(`/posts/${id}`);
       return response.data;
     } catch (error) {
       if (error.response?.status === 404) {
-        // Try admin articles endpoint
-        const response = await api.delete(`/admin/articles/${id}`);
+        // Try admin posts endpoint
+        const response = await api.delete(`/admin/posts/${id}`);
         return response.data;
       }
       throw error;
@@ -1048,9 +1089,9 @@ export const adminAPI = {
     console.log('🔍 AdminAPI.getPostById called with ID:', id);
     
     try {
-      console.log('📡 Trying /admin/posts/{id} endpoint...');
-      const response = await api.get(`/admin/posts/${id}`);
-      console.log('✅ Admin post response received:', {
+      console.log('📡 Trying /posts/{id} endpoint...');
+      const response = await api.get(`/posts/${id}`);
+      console.log('✅ Post response received:', {
         status: response.status,
         dataType: typeof response.data,
         hasData: !!response.data,
@@ -1059,13 +1100,13 @@ export const adminAPI = {
       });
       return response.data;
     } catch (error) {
-      console.error('❌ Admin posts/{id} endpoint failed:', error.response?.status, error.message);
+      console.error('❌ Posts/{id} endpoint failed:', error.response?.status, error.message);
       
       if (error.response?.status === 404) {
         try {
-          console.log('🔄 Trying /admin/articles/{id} endpoint as fallback...');
-          const response = await api.get(`/admin/articles/${id}`);
-          console.log('✅ Admin articles response received:', {
+          console.log('🔄 Trying /admin/posts/{id} endpoint as fallback...');
+          const response = await api.get(`/admin/posts/${id}`);
+          console.log('✅ Admin posts response received:', {
             status: response.status,
             dataType: typeof response.data,
             hasData: !!response.data,
@@ -1073,25 +1114,9 @@ export const adminAPI = {
             postTitle: response.data?.title
           });
           return response.data;
-        } catch (articlesError) {
-          console.error('❌ Admin articles/{id} endpoint also failed:', articlesError.response?.status, articlesError.message);
-          
-          // Final fallback - try the regular articles endpoint
-          try {
-            console.log('🔄 Trying /articles/{id} endpoint as final fallback...');
-            const response = await api.get(`/articles/${id}`);
-            console.log('✅ Regular articles response received:', {
-              status: response.status,
-              dataType: typeof response.data,
-              hasData: !!response.data,
-              postId: response.data?.id,
-              postTitle: response.data?.title
-            });
-            return response.data;
-          } catch (finalError) {
-            console.error('❌ All endpoints failed for post ID:', id);
-            throw finalError;
-          }
+        } catch (adminError) {
+          console.error('❌ Admin posts/{id} endpoint also failed:', adminError.response?.status, adminError.message);
+          throw adminError;
         }
       }
       throw error;

@@ -89,12 +89,11 @@ src/
 The application is designed to work with a .NET 9 backend API. The API service layer (`src/services/api.js`) includes:
 
 ### Article Endpoints
-- `GET /api/articles` - Get paginated articles
-- `GET /api/articles/featured` - Get featured articles
-- `GET /api/articles/{id}` - Get article by ID
-- `GET /api/articles/category/{category}` - Get articles by category
-- `GET /api/articles/trending` - Get trending articles
-- `GET /api/articles/search` - Search articles
+- `GET /api/posts` - Get paginated posts/articles
+- `GET /api/posts/featured` - Get featured posts/articles
+- `GET /api/posts/{id}` - Get post/article by ID
+- `GET /api/posts?categoryId={category}` - Get posts/articles by category
+- `GET /api/posts?search={query}` - Search posts/articles
 
 ### Category Endpoints
 - `GET /api/categories` - Get all categories

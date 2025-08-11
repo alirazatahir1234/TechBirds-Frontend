@@ -23,8 +23,8 @@ const UserPage = () => {
         ]);
 
         setUser(userData);
-        setArticles(articlesData.articles || articlesData);
-        setHasMore((articlesData.articles || articlesData).length === 12);
+        setArticles(articlesData.posts || articlesData.data || articlesData);
+        setHasMore((articlesData.posts || articlesData.data || articlesData).length === 12);
         setPage(1);
       } catch (err) {
         setError('Failed to load user. Please try again later.');
@@ -77,7 +77,7 @@ const UserPage = () => {
     try {
       const nextPage = page + 1;
       const newArticles = await userAPI.getArticlesByUser(id, nextPage, 12);
-      const articleList = newArticles.articles || newArticles;
+      const articleList = newArticles.posts || newArticles.data || newArticles;
       
       setArticles(prev => [...prev, ...articleList]);
       setPage(nextPage);

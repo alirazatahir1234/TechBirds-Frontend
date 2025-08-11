@@ -26,20 +26,20 @@ app.UseCors("TechBirdsFrontend");
 // Expected API Endpoints Structure for TechBirds:
 export const expectedEndpoints = {
   // Articles
-  'GET /api/articles': 'Get paginated articles',
-  'GET /api/articles/{id}': 'Get article by ID',
-  'GET /api/articles/featured': 'Get featured articles',
-  'GET /api/articles/trending': 'Get trending articles',
-  'GET /api/articles/popular': 'Get popular articles',
+  'GET /api/posts': 'Get paginated posts/articles',
+  'GET /api/posts/{id}': 'Get post/article by ID',
+  'GET /api/posts/featured': 'Get featured posts/articles',
+  'GET /api/posts?search={query}': 'Search posts/articles',
+  'GET /api/posts?categoryId={id}': 'Get posts/articles by category',
   
   // Categories
   'GET /api/categories': 'Get all categories',
-  'GET /api/categories/{id}/articles': 'Get articles by category',
+  'GET /api/categories/{id}/posts': 'Get posts by category',
   
   // Authors
   'GET /api/authors': 'Get all authors',
   'GET /api/authors/{id}': 'Get author by ID',
-  'GET /api/authors/{id}/articles': 'Get articles by author',
+  'GET /api/authors/{id}/posts': 'Get posts by author',
   
   // Search
   'GET /api/search': 'Search articles',
@@ -48,8 +48,8 @@ export const expectedEndpoints = {
   'POST /api/newsletter/subscribe': 'Subscribe to newsletter',
   
   // Comments (optional)
-  'GET /api/articles/{id}/comments': 'Get article comments',
-  'POST /api/articles/{id}/comments': 'Add comment',
+  'GET /api/posts/{id}/comments': 'Get post comments',
+  'POST /api/posts/{id}/comments': 'Add comment',
   
   // Stats (optional)
   'GET /api/stats/dashboard': 'Get dashboard statistics'

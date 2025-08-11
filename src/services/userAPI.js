@@ -139,7 +139,7 @@ export const usersAPI = {
       status: params.status || 'published'
     });
     
-    const response = await userAPI.get(`/users/${userId}/articles?${queryParams}`);
+    const response = await userAPI.get(`/users/${userId}/posts?${queryParams}`);
     return response.data;
   },
 
@@ -241,18 +241,18 @@ export const enhancedArticlesAPI = {
       sortOrder: params.sortOrder || 'desc'
     });
     
-    const response = await userAPI.get(`/articles?${queryParams}`);
+    const response = await userAPI.get(`/posts?${queryParams}`);
     return response.data;
   },
 
-  // Get article by ID with user data
-  getArticleById: async (id) => {
-    const response = await userAPI.get(`/articles/${id}`);
+  // Get post by ID with user data
+  getPostById: async (id) => {
+    const response = await userAPI.get(`/posts/${id}`);
     return response.data;
   },
 
-  // Create new article
-  createArticle: async (articleData) => {
+  // Create new post
+  createPost: async (postData) => {
     // Ensure we use userId instead of authorId
     const mappedData = {
       ...articleData,
@@ -260,19 +260,19 @@ export const enhancedArticlesAPI = {
     };
     delete mappedData.authorId; // Remove old field
     
-    const response = await userAPI.post('/articles', mappedData);
+    const response = await userAPI.post('/posts', mappedData);
     return response.data;
   },
 
-  // Update article
-  updateArticle: async (id, articleData) => {
+  // Update post
+  updatePost: async (id, postData) => {
     const mappedData = {
-      ...articleData,
-      userId: articleData.userId || articleData.authorId
+      ...postData,
+      userId: postData.userId || postData.authorId
     };
     delete mappedData.authorId;
     
-    const response = await userAPI.put(`/articles/${id}`, mappedData);
+    const response = await userAPI.put(`/posts/${id}`, mappedData);
     return response.data;
   }
 };

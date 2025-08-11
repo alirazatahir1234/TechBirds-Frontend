@@ -26,7 +26,7 @@ import {
   Cog
 } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
-import { articleAPI, userAPI, categoryAPI } from '../../services/api';
+import { postsAPI, userAPI, categoryAPI } from '../../services/api';
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -45,19 +45,19 @@ const AdminLayout = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [articlesRes, usersRes, categoriesRes] = await Promise.allSettled([
-          articleAPI.getArticles(1, 1), // Get minimal data for count
+        const [postsRes, usersRes, categoriesRes] = await Promise.allSettled([
+          postsAPI.getPosts({ page: 1, pageSize: 1 }), // Get minimal data for count
           userAPI.getUsers({ page: 1, limit: 1 }),  // Get minimal data for count
           categoryAPI.getCategories()    // No parameters needed
         ]);
 
-        const articlesData = articlesRes.status === 'fulfilled' ? articlesRes.value : [];
+        const postsData = postsRes.status === 'fulfilled' ? postsRes.value : [];
         const usersData = usersRes.status === 'fulfilled' ? usersRes.value : [];
 
         setStats([
           { 
             name: 'Total Articles', 
-            value: (articlesData.pagination?.total || articlesData.articles?.length || 0).toLocaleString(), 
+            value: (postsData.pagination?.total || postsData.posts?.length || 0).toLocaleString(), 
             change: '+0%', 
             changeType: 'neutral' 
           },
