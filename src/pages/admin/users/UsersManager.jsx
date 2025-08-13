@@ -1,3 +1,11 @@
+// Helper to get avatar URL (base64 or fallback)
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return undefined;
+  if (typeof avatar === 'string' && avatar.length > 100 && !avatar.startsWith('http')) {
+    return `data:image/png;base64,${avatar}`;
+  }
+  return avatar;
+};
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -12,6 +20,8 @@ import {
   Eye
 } from 'lucide-react';
 import { userAPI } from '../../../services/api';
+
+
 
 const UsersManager = () => {
   const [users, setUsers] = useState([]);
@@ -191,15 +201,16 @@ const UsersManager = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
           {filteredUsers.map((user) => (
             <div key={user.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
               {/* User Avatar & Basic Info */}
               <div className="flex items-start space-x-4">
                 <div className="flex-shrink-0">
-                  {user.avatar ? (
+                  {getAvatarUrl(user.avatar) ? (
                     <img
                       className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
-                      src={user.avatar}
+                      src={getAvatarUrl(user.avatar)}
                       alt={user.name || `${user.firstName} ${user.lastName}`}
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -209,7 +220,7 @@ const UsersManager = () => {
                   ) : null}
                   <div 
                     className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center"
-                    style={{ display: user.avatar ? 'none' : 'flex' }}
+                    style={{ display: getAvatarUrl(user.avatar) ? 'none' : 'flex' }}
                   >
                     <User className="h-8 w-8 text-gray-400" />
                   </div>

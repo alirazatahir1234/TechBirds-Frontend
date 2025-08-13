@@ -65,6 +65,16 @@ export default function CreateUser() {
     }
   };
 
+  // Helper to convert file to base64
+  const toBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     // Password validation rules
@@ -95,6 +105,13 @@ export default function CreateUser() {
 
     setIsLoading(true);
     try {
+      let avatarBase64 = null;
+      if (formData.avatar && typeof formData.avatar !== 'string') {
+        avatarBase64 = await toBase64(formData.avatar);
+      } else if (typeof formData.avatar === 'string') {
+        avatarBase64 = formData.avatar;
+      }
+
       // Transform the data to match backend expectations
       const userData = {
         firstName: formData.firstName,
@@ -107,8 +124,8 @@ export default function CreateUser() {
         isActive: formData.status?.toLowerCase() === 'active',
         website: formData.website || null,
         twitter: formData.twitter || null,
-        linkedIn: formData.linkedin || null,
-        avatar: typeof formData.avatar === 'string' ? formData.avatar : null
+        linkedin: formData.linkedin || null,
+        avatar: avatarBase64
       };
       // Call the actual API to create the user
       const newUser = await userAPI.createUser(userData);
