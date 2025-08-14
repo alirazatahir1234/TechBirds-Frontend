@@ -24,6 +24,7 @@ import { userAPI } from '../../../services/api';
 
 
 const UsersManager = () => {
+  // Remove currentUserRole logic
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -256,7 +257,9 @@ const UsersManager = () => {
               <div className="mt-4 space-y-2">
                 <div className="flex items-center text-sm text-gray-600">
                   <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{user.email || 'No email provided'}</span>
+                  <span className="truncate">
+                    {user.email ? user.email : (user.name ? user.name : 'Not exist')}
+                  </span>
                 </div>
                 {user.website && (
                   <div className="flex items-center text-sm text-gray-600">
@@ -295,7 +298,7 @@ const UsersManager = () => {
                 </div>
               </div>
 
-              {/* Social Links */}
+
               {(user.twitter || user.linkedIn) && (
                 <div className="mt-4 flex gap-2">
                   {user.twitter && (
