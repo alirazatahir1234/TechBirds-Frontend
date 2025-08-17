@@ -126,14 +126,20 @@ const AdminLayout = () => {
       current: location.pathname === '/admin/dashboard'
     },
     {
-      name: 'Content',
+      name: 'Posts',
       icon: BookOpen,
       children: [
         { name: 'All Posts', href: '/admin/posts', icon: List },
         { name: 'Add New Post', href: '/admin/posts/create', icon: PlusCircle },
-        { name: 'Pages', href: '/admin/pages', icon: FileText },
-        { name: 'Add New Page', href: '/admin/pages/create', icon: PlusCircle },
         { name: 'Tags', href: '/admin/tags', icon: Tag }
+      ]
+    },
+    {
+      name: 'Pages',
+      icon: FileText,
+      children: [
+        { name: 'All Pages', href: '/admin/pages', icon: List },
+        { name: 'Add New Page', href: '/admin/pages/create', icon: PlusCircle }
       ]
     },
     {
