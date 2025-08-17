@@ -126,12 +126,26 @@ const AdminLayout = () => {
       current: location.pathname === '/admin/dashboard'
     },
     {
+      name: 'Media Library',
+      href: '/admin/media',
+      icon: FolderOpen,
+      current: location.pathname.startsWith('/admin/media')
+    },
+    {
       name: 'Posts',
       icon: BookOpen,
       children: [
         { name: 'All Posts', href: '/admin/posts', icon: List },
         { name: 'Add New Post', href: '/admin/posts/create', icon: PlusCircle },
         { name: 'Tags', href: '/admin/tags', icon: Tag }
+      ]
+    },
+    {
+      name: 'Pages',
+      icon: FileText,
+      children: [
+        { name: 'All Pages', href: '/admin/pages', icon: List },
+        { name: 'Add New Page', href: '/admin/pages/create', icon: PlusCircle }
       ]
     },
     {
@@ -164,7 +178,6 @@ const AdminLayout = () => {
       children: [
         { name: 'Newsletter', href: '/admin/newsletter', icon: Mail },
         { name: 'Analytics', href: '/admin/analytics', icon: Activity },
-        { name: 'Media Library', href: '/admin/media', icon: FolderOpen },
         { name: 'System Health', href: '/admin/health', icon: Cog }
       ]
     },

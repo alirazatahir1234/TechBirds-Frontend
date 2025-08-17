@@ -17,6 +17,8 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PostsList from './pages/admin/posts/PostsList';
 import PostForm from './pages/admin/posts/PostForm';
+import PagesList from './pages/admin/pages/PagesList';
+import PageForm from './pages/admin/pages/PageForm';
 import CategoriesManager from './pages/admin/categories/CategoriesManager';
 import UsersManager from './pages/admin/users/UsersManager';
 import CreateUser from './pages/admin/users/CreateUser';
@@ -55,6 +57,11 @@ function App() {
               <Route path="posts" element={<PostsList />} />
               <Route path="posts/create" element={<PostForm />} />
               <Route path="posts/:id/edit" element={<PostForm />} />
+
+              {/* Pages Management */}
+              <Route path="pages" element={<PagesList />} />
+              <Route path="pages/create" element={<PageForm />} />
+              <Route path="pages/:id/edit" element={<PageForm />} />
               
               {/* Categories Management */}
               <Route path="categories" element={<CategoriesManager />} />

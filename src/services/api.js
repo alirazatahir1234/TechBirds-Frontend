@@ -1219,6 +1219,79 @@ export const adminAPI = {
   },
 };
 
+// Pages API functions
+export const pagesAPI = {
+  // Create page (auth required)
+  create: async (data) => {
+    const body = { ...data };
+    if (body.metaJson && typeof body.metaJson === 'object') {
+      body.metaJson = JSON.stringify(body.metaJson);
+    }
+    // If slug omitted, backend will auto-generate
+    const res = await api.post('/Pages', body);
+    return res.data;
+  },
+
+  // Update page (auth required)
+  update: async (id, data) => {
+    const body = { ...data };
+    if (body.metaJson && typeof body.metaJson === 'object') {
+      body.metaJson = JSON.stringify(body.metaJson);
+    }
+    const res = await api.put(`/Pages/${id}`, body);
+    return res.data;
+  },
+
+  // Get page by id (public)
+  getById: async (id) => {
+    const res = await api.get(`/Pages/${id}`);
+    return res.data;
+  },
+
+  // Get page by slug (public)
+  getBySlug: async (slug) => {
+    const res = await api.get(`/Pages/slug/${encodeURIComponent(slug)}`);
+    return res.data;
+  },
+
+  // List pages (public)
+  list: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', params.page);
+    if (params.limit) query.set('limit', params.limit);
+    if (params.search) query.set('search', params.search);
+    if (params.status) query.set('status', params.status);
+    if (params.parentId) query.set('parentId', params.parentId);
+    if (params.sortBy) query.set('sortBy', params.sortBy);
+    if (params.sortOrder) query.set('sortOrder', params.sortOrder);
+    const res = await api.get(`/Pages?${query.toString()}`);
+    return res.data;
+  },
+
+  // Delete (soft) (auth: Editor+)
+  softDelete: async (id) => {
+    const res = await api.delete(`/Pages/${id}`);
+    return res.data;
+  },
+
+  // Delete (hard) (auth: Admin+)
+  hardDelete: async (id) => {
+    const res = await api.delete(`/Pages/${id}/hard`);
+    return res.data;
+  },
+
+  // Revisions (auth: Author+)
+  listRevisions: async (id) => {
+    const res = await api.get(`/Pages/${id}/revisions`);
+    return res.data;
+  },
+
+  restoreRevision: async (id, revisionId) => {
+    const res = await api.post(`/Pages/${id}/restore/${revisionId}`);
+    return res.data;
+  },
+};
+
 // Media API functions
 export const mediaAPI = {
   // Upload media with metadata
