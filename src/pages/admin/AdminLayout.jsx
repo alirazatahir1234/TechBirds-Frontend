@@ -126,6 +126,12 @@ const AdminLayout = () => {
       current: location.pathname === '/admin/dashboard'
     },
     {
+      name: 'Media Library',
+      href: '/admin/media',
+      icon: FolderOpen,
+      current: location.pathname.startsWith('/admin/media')
+    },
+    {
       name: 'Posts',
       icon: BookOpen,
       children: [
@@ -172,7 +178,6 @@ const AdminLayout = () => {
       children: [
         { name: 'Newsletter', href: '/admin/newsletter', icon: Mail },
         { name: 'Analytics', href: '/admin/analytics', icon: Activity },
-        { name: 'Media Library', href: '/admin/media', icon: FolderOpen },
         { name: 'System Health', href: '/admin/health', icon: Cog }
       ]
     },
