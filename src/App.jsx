@@ -26,7 +26,7 @@ import CommentsManager from './pages/admin/comments/CommentsManager';
 import PendingComments from './pages/admin/comments/PendingComments';
 import SpamComments from './pages/admin/comments/SpamComments';
 import Analytics from './pages/admin/operations/Analytics';
-import FileManager from './pages/admin/operations/FileManager';
+import MediaLibrary from './pages/admin/media/MediaLibrary';
 
 function App() {
   return (
@@ -77,7 +77,7 @@ function App() {
               
               {/* Operations */}
               <Route path="analytics" element={<Analytics />} />
-              <Route path="files" element={<FileManager />} />
+              <Route path="media" element={<MediaLibrary />} />
               
               {/* Newsletter Management */}
               <Route path="newsletter" element={<NewsletterManager />} />

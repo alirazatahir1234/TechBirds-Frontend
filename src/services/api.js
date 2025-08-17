@@ -1219,6 +1219,97 @@ export const adminAPI = {
   },
 };
 
+// Media API functions
+export const mediaAPI = {
+  // Upload media with metadata
+  upload: async ({ file, title, altText, caption, description }) => {
+    const formData = new FormData();
+    if (!file) throw new Error('File is required');
+    formData.append('file', file);
+    if (title) formData.append('title', title);
+    if (altText) formData.append('altText', altText);
+    if (caption) formData.append('caption', caption);
+    if (description) formData.append('description', description);
+
+    const response = await api.post('/media/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // List media with filters/pagination
+  list: async (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', params.page);
+    if (params.limit) query.set('limit', params.limit);
+    if (params.mimeType) query.set('mimeType', params.mimeType);
+    if (params.search) query.set('search', params.search);
+    if (params.sortBy) query.set('sortBy', params.sortBy);
+    if (params.sortOrder) query.set('sortOrder', params.sortOrder);
+    if (params.uploadedByUserId) query.set('uploadedByUserId', params.uploadedByUserId);
+
+    const response = await api.get(`/media?${query.toString()}`);
+    return response.data;
+  },
+
+  getById: async (id) => {
+    const response = await api.get(`/media/${id}`);
+    return response.data;
+  },
+
+  updateMetadata: async (id, metadata) => {
+    const allowed = ['title', 'altText', 'caption', 'description'];
+    const body = {};
+    allowed.forEach(k => {
+      if (metadata[k] !== undefined) body[k] = metadata[k];
+    });
+    const response = await api.put(`/media/${id}`, body);
+    return response.data;
+  },
+
+  softDelete: async (id) => {
+    const response = await api.delete(`/media/${id}`);
+    return response.data;
+  },
+
+  hardDelete: async (id) => {
+    const response = await api.delete(`/media/${id}/hard`);
+    return response.data;
+  },
+
+  // Helpers for building absolute/preview URLs
+  absoluteUrl: (pathOrUrl) => {
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || '';
+      const origin = new URL(base, window.location.origin).origin;
+      return new URL(pathOrUrl, origin).href;
+    } catch {
+      return pathOrUrl;
+    }
+  },
+
+  thumbnailUrl: (id, item) => {
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || '';
+      const origin = new URL(base, window.location.origin).origin;
+      if (item?.thumbnailUrl) return new URL(item.thumbnailUrl, origin).href;
+      return `${origin}/api/media/${id}/thumbnail`;
+    } catch {
+      return item?.thumbnailUrl || '';
+    }
+  },
+
+  fileUrl: (id) => {
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL || '';
+      const origin = new URL(base, window.location.origin).origin;
+      return `${origin}/api/media/${id}/file`;
+    } catch {
+      return `/api/media/${id}/file`;
+    }
+  },
+};
+
 export default api;
 
 // Export role mapping functions for use in components

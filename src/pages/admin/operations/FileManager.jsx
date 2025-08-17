@@ -22,6 +22,7 @@ import {
   HardDrive
 } from 'lucide-react';
 
+// This component has been deprecated. Media Library replaces File Manager.
 export default function FileManager() {
   const [files, setFiles] = useState([]);
   const [folders, setFolders] = useState([]);

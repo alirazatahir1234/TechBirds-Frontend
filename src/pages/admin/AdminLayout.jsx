@@ -164,7 +164,7 @@ const AdminLayout = () => {
       children: [
         { name: 'Newsletter', href: '/admin/newsletter', icon: Mail },
         { name: 'Analytics', href: '/admin/analytics', icon: Activity },
-        { name: 'File Manager', href: '/admin/files', icon: FolderOpen },
+        { name: 'Media Library', href: '/admin/media', icon: FolderOpen },
         { name: 'System Health', href: '/admin/health', icon: Cog }
       ]
     },
