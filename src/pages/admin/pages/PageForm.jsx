@@ -12,23 +12,6 @@ const PageForm = ({ initialData, onSave, loading, error }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({ title, slug, content, status });
-  );
-}
-
-import React, { useState } from 'react';
-import { FileText, Eye, Save, Loader2 } from 'lucide-react';
-
-const PageForm = ({ initialData, onSave, loading, error }) => {
-  const [title, setTitle] = useState(initialData?.title || '');
-  const [slug, setSlug] = useState(initialData?.slug || '');
-  const [content, setContent] = useState(initialData?.content || '');
-  const [status, setStatus] = useState(initialData?.status || 'draft');
-
-  const handleContentChange = (e) => setContent(e.target.value);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({ title, slug, content, status });
   };
 
   return (
