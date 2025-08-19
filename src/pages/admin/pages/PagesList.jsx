@@ -1,71 +1,44 @@
-import React, { useState } from 'react';
-import { Pencil, Trash2, FileText, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const defaultSorts = [
-  { value: 'title', label: 'Title' },
-  { value: 'date', label: 'Date' },
-  { value: 'status', label: 'Status' },
-];
+import React, { useState, useEffect } from 'react';
+import { FileText, PlusCircle, Edit3, Trash2, Filter, ChevronDown, Search } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import PageService from '../../../services/PageService';
 
-const statusOptions = [
-  { value: '', label: 'All Status' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'published', label: 'Published' },
-];
-
-const PagesList = ({ pages, onEdit, onDelete, loading, error }) => {
+const PagesList = () => {
+  const [pages, setPages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
-  const [sort, setSort] = useState('date');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [page, setPage] = useState(1);
   const [selected, setSelected] = useState([]);
-  const pageSize = 10;
+  const [filter, setFilter] = useState('all');
 
-  // Filter, sort, and paginate
-  let filtered = pages || [];
-  if (search) {
-    filtered = filtered.filter(p =>
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      (p.slug && p.slug.toLowerCase().includes(search.toLowerCase()))
-    );
-  }
-  if (status) {
-    filtered = filtered.filter(p => p.status === status);
-  }
-  filtered = filtered.sort((a, b) => {
-    if (sort === 'title') {
-      return sortOrder === 'asc'
-        ? a.title.localeCompare(b.title)
-        : b.title.localeCompare(a.title);
-    }
-    if (sort === 'date') {
-      const da = new Date(a.date || a.updatedAt || a.createdAt || 0);
-      const db = new Date(b.date || b.updatedAt || b.createdAt || 0);
-      return sortOrder === 'asc' ? da - db : db - da;
-    }
-    if (sort === 'status') {
-      return sortOrder === 'asc'
-        ? a.status.localeCompare(b.status)
-        : b.status.localeCompare(a.status);
-    }
-    return 0;
-  });
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
+  React.useEffect(() => {
+    const fetchPages = async () => {
+      setLoading(true);
+      try {
+        const data = await PageService.getPages({ search, filter });
+        setPages(data.pages || []);
+        setError(null);
+      } catch (err) {
+        setError('Failed to fetch pages');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPages();
+  }, [search, filter]);
 
-  // Bulk actions
-  const toggleSelect = id => {
-    setSelected(sel => sel.includes(id) ? sel.filter(i => i !== id) : [...sel, id]);
-  };
-  const selectAll = () => {
-    setSelected(paged.map(p => p.id));
-  };
-  const clearSelected = () => setSelected([]);
-  const bulkDelete = () => {
-    if (window.confirm('Delete selected pages?')) {
-      selected.forEach(id => onDelete({ id }));
-      clearSelected();
+  const handleBulkDelete = async () => {
+    if (selected.length === 0) return;
+    setLoading(true);
+    try {
+      await PageService.bulkDelete(selected);
+      setPages(pages.filter(page => !selected.includes(page.id)));
+      setSelected([]);
+    } catch {
+      setError('Bulk delete failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,148 +46,66 @@ const PagesList = ({ pages, onEdit, onDelete, loading, error }) => {
     <div className="max-w-6xl mx-auto mt-8">
       <div className="flex items-center gap-2 mb-6">
         <FileText className="w-7 h-7 text-blue-600" />
-        <h2 className="text-2xl font-bold">Pages</h2>
+        <h2 className="text-2xl font-bold">All Pages</h2>
+        <Link to="/admin/pages/create" className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Page
+        </Link>
       </div>
-      <div className="flex flex-wrap gap-4 mb-4 items-center">
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+      <div className="flex items-center mb-4 gap-2">
+        <div className="relative w-64">
           <input
             type="text"
-            className="pl-9 pr-3 py-2 border rounded-md w-64"
-            placeholder="Search title or slug..."
+            className="w-full pl-10 pr-3 py-2 border rounded-md"
+            placeholder="Search pages..."
             value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1); }}
+            onChange={e => setSearch(e.target.value)}
           />
+          <span className="absolute left-3 top-2.5 text-gray-400"><Search className="h-4 w-4" /></span>
         </div>
-        <select
-          className="border rounded-md px-3 py-2"
-          value={status}
-          onChange={e => { setStatus(e.target.value); setPage(1); }}
-        >
-          {statusOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
-        <select
-          className="border rounded-md px-3 py-2"
-          value={sort}
-          onChange={e => setSort(e.target.value)}
-        >
-          {defaultSorts.map(opt => (
-            <option key={opt.value} value={opt.value}>Sort: {opt.label}</option>
-          ))}
-        </select>
-        <select
-          className="border rounded-md px-3 py-2"
-          value={sortOrder}
-          onChange={e => setSortOrder(e.target.value)}
-        >
-          <option value="desc">Desc</option>
-          <option value="asc">Asc</option>
-        </select>
+        <button className="flex items-center px-3 py-2 border rounded-md" onClick={() => setFilter(filter === 'all' ? 'published' : 'all')}>
+          <Filter className="mr-2 h-4 w-4" />
+          {filter === 'all' ? 'All' : 'Published'}
+          <ChevronDown className="ml-2 h-3 w-3" />
+        </button>
         <button
-          className="px-3 py-2 border rounded-md bg-gray-100 hover:bg-gray-200"
-          onClick={selectAll}
-          disabled={paged.length === 0}
-        >Select All</button>
-        <button
-          className="px-3 py-2 border rounded-md bg-gray-100 hover:bg-gray-200"
-          onClick={clearSelected}
+          className="ml-auto px-4 py-2 bg-red-600 text-white rounded-md disabled:opacity-50"
           disabled={selected.length === 0}
-        >Clear</button>
-        <button
-          className="px-3 py-2 border rounded-md bg-red-600 text-white hover:bg-red-700"
-          onClick={bulkDelete}
-          disabled={selected.length === 0}
-        >Delete Selected</button>
+          onClick={handleBulkDelete}
+        >
+          <Trash2 className="mr-2 h-4 w-4" /> Bulk Delete
+        </button>
       </div>
-      {error && <div className="mb-4 text-red-500">{error}</div>}
       {loading ? (
-        <div className="text-blue-500">Loading...</div>
+        <div className="text-center py-10">Loading...</div>
+      ) : error ? (
+        <div className="text-center text-red-500 py-10">{error}</div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white rounded-lg shadow-md overflow-hidden">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold">
-                  <input
-                    type="checkbox"
-                    checked={paged.length > 0 && paged.every(p => selected.includes(p.id))}
-                    onChange={e => e.target.checked ? selectAll() : clearSelected()}
-                  />
-                </th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Title</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Author</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Date</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Status</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Actions</th>
+        <table className="min-w-full bg-white rounded-lg shadow">
+          <thead>
+            <tr>
+              <th className="px-4 py-2"><input type="checkbox" checked={selected.length === pages.length && pages.length > 0} onChange={e => setSelected(e.target.checked ? pages.map(p => p.id) : [])} /></th>
+              <th className="px-4 py-2 text-left">Title</th>
+              <th className="px-4 py-2 text-left">Status</th>
+              <th className="px-4 py-2 text-left">Last Updated</th>
+              <th className="px-4 py-2">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pages.map(page => (
+              <tr key={page.id} className="border-t">
+                <td className="px-4 py-2"><input type="checkbox" checked={selected.includes(page.id)} onChange={e => setSelected(e.target.checked ? [...selected, page.id] : selected.filter(id => id !== page.id))} /></td>
+                <td className="px-4 py-2">{page.title}</td>
+                <td className="px-4 py-2">{page.status}</td>
+                <td className="px-4 py-2">{new Date(page.updatedAt).toLocaleString()}</td>
+                <td className="px-4 py-2 flex gap-2">
+                  <Link to={`/admin/pages/edit/${page.id}`} className="text-blue-600 hover:underline"><Edit3 className="h-4 w-4" /></Link>
+                  <button className="text-red-600" onClick={() => PageService.deletePage(page.id)}><Trash2 className="h-4 w-4" /></button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {paged.length > 0 ? (
-                paged.map((item) => (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(item.id)}
-                        onChange={() => toggleSelect(item.id)}
-                      />
-                    </td>
-                    <td className="px-4 py-2 font-medium">{item.title}</td>
-                    <td className="px-4 py-2">{item.author || '-'}</td>
-                    <td className="px-4 py-2">{item.date ? new Date(item.date).toLocaleDateString() : '-'}</td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${item.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2 flex gap-2">
-                      <button
-                        className="p-2 rounded hover:bg-blue-100"
-                        title="Edit"
-                        onClick={() => onEdit(item)}
-                      >
-                        <Pencil className="w-5 h-5 text-blue-600" />
-                      </button>
-                      <button
-                        className="p-2 rounded hover:bg-red-100"
-                        title="Delete"
-                        onClick={() => onDelete(item)}
-                      >
-                        <Trash2 className="w-5 h-5 text-red-600" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">No pages found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
       )}
-      <div className="flex items-center justify-between mt-4">
-        <div className="text-sm text-gray-500">Page {page} / {totalPages} • Total {filtered.length}</div>
-        <div className="space-x-2">
-          <button
-            className="px-3 py-1 border rounded disabled:opacity-50 flex items-center gap-1"
-            disabled={page <= 1}
-            onClick={() => setPage(p => Math.max(1, p - 1))}
-          >
-            <ChevronLeft className="w-4 h-4" /> Prev
-          </button>
-          <button
-            className="px-3 py-1 border rounded flex items-center gap-1"
-            disabled={page >= totalPages}
-            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-          >
-            Next <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
     </div>
   );
 };

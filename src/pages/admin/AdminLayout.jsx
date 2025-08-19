@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom';
+import PagesList from './pages/PagesList';
+import PageEditor from './pages/PageEditor';
 import { 
   LayoutDashboard, 
   FileText, 
@@ -293,7 +295,12 @@ const AdminLayout = () => {
           ) : (
             <div className="py-6">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
-                <Outlet />
+                {/* Admin Pages Routing */}
+                {location.pathname === '/admin/pages' && <PagesList />}
+                {location.pathname === '/admin/pages/create' && <PageEditor />}
+                {location.pathname.startsWith('/admin/pages/edit/') && <PageEditor />}
+                {/* Fallback to Outlet for other routes */}
+                {!(location.pathname.startsWith('/admin/pages')) && <Outlet />}
               </div>
             </div>
           )}
