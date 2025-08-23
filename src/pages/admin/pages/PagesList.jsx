@@ -62,14 +62,6 @@ const PagesList = ({ pages, onEdit, onDelete, loading, error }) => {
   const selectAll = () => {
     setSelected(paged.map(p => p.id));
   };
-  const clearSelected = () => setSelected([]);
-  const bulkDelete = () => {
-    if (window.confirm('Delete selected pages?')) {
-      selected.forEach(id => onDelete({ id }));
-      clearSelected();
-    }
-  };
-
   return (
     <div className="max-w-6xl mx-auto mt-8">
       <div className="flex items-center gap-2 mb-6">
@@ -220,44 +212,4 @@ const PagesList = ({ pages, onEdit, onDelete, loading, error }) => {
   );
 };
 
-export default PagesList;
-        <table className="min-w-full">
-          <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-            <tr>
-              <th className="text-left px-4 py-2">Title</th>
-              <th className="text-left px-4 py-2">Status</th>
-              <th className="text-left px-4 py-2">Slug</th>
-              <th className="text-left px-4 py-2">Updated</th>
-              <th className="text-right px-4 py-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {items.map(p => (
-              <tr key={p.id} className="hover:bg-gray-50">
-                <td className="px-4 py-2">
-                  <Link to={`/admin/pages/${p.id}/edit`} className="text-green-700 hover:underline font-medium">{p.title}</Link>
-                </td>
-                <td className="px-4 py-2 text-sm text-gray-600">{p.status}</td>
-                <td className="px-4 py-2 text-sm text-gray-600">{p.slug}</td>
-                <td className="px-4 py-2 text-sm text-gray-600">{new Date(p.updatedAt || p.createdAt || Date.now()).toLocaleString()}</td>
-                <td className="px-4 py-2 text-right space-x-2">
-                  <Link to={`/admin/pages/${p.id}/edit`} className="inline-flex items-center px-2 py-1 border rounded text-sm"><Edit2 className="w-4 h-4 mr-1" /> Edit</Link>
-                  <button onClick={() => doSoftDelete(p.id)} className="inline-flex items-center px-2 py-1 border rounded text-sm"><Trash className="w-4 h-4 mr-1" /> Trash</button>
-                  <button onClick={() => doHardDelete(p.id)} className="inline-flex items-center px-2 py-1 border rounded text-sm text-red-600"><Trash2 className="w-4 h-4 mr-1" /> Delete</button>
-                </td>
-              </tr>
-            ))}
-            {items.length === 0 && !loading && (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500">No pages found</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-500">Page {meta.page} / {meta.totalPages} • Total {meta.total}</div>
-        <div className="space-x-2">
-          <button disabled={filters.page <= 1} onClick={() => changePage(-1)} className="px-3 py-1 border rounded disabled:opacity-50">Prev</button>
-          <button onClick={() => changePage(1)} className="px-3 py-1 border rounded">Next</button>
-        </div>
 export default PagesList;
