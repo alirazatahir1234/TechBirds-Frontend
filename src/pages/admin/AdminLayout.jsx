@@ -35,7 +35,7 @@ const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [stats, setStats] = useState([
-    { name: 'Total Articles', value: '0', change: '0%', changeType: 'neutral' },
+    { name: 'Total Posts', value: '0', change: '0%', changeType: 'neutral' },
     { name: 'Total Users', value: '0', change: '0%', changeType: 'neutral' },
     { name: 'Categories', value: '0', change: '0%', changeType: 'neutral' },
     { name: 'Total Views', value: '0', change: '0%', changeType: 'neutral' }
@@ -45,47 +45,23 @@ const AdminLayout = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [postsRes, usersRes, categoriesRes] = await Promise.allSettled([
-          postsAPI.getPosts({ page: 1, pageSize: 1 }), // Get minimal data for count
-          userAPI.getUsers({ page: 1, limit: 1 }),  // Get minimal data for count
-          categoryAPI.getCategories()    // No parameters needed
-        ]);
-
-        const postsData = postsRes.status === 'fulfilled' ? postsRes.value : [];
-        const usersData = usersRes.status === 'fulfilled' ? usersRes.value : [];
-
+        const response = await fetch('/api/admin/dashboard/stats');
+        if (!response.ok) throw new Error('Failed to fetch dashboard stats');
+        const data = await response.json();
         setStats([
-          { 
-            name: 'Total Articles', 
-            value: (postsData.pagination?.total || postsData.posts?.length || 0).toLocaleString(), 
-            change: '+0%', 
-            changeType: 'neutral' 
-          },
-          { 
-            name: 'Total Users', 
-            value: (Array.isArray(usersData) ? usersData.length : usersData.total || 0).toLocaleString(), 
-            change: '+0%', 
-            changeType: 'neutral' 
-          },
-          { 
-            name: 'Categories', 
-            value: (Array.isArray(categoriesData) ? categoriesData.length : categoriesData.total || 0).toLocaleString(), 
-            change: '+0%', 
-            changeType: 'neutral' 
-          },
-          { 
-            name: 'Total Views', 
-            value: '0', // This will be updated when view tracking is implemented
-            change: '+0%', 
-            changeType: 'neutral' 
-          }
+          { name: 'Total Users', value: data.totalUsers?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' },
+          { name: 'Total Posts', value: data.totalPosts?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' },
+          { name: 'Categories', value: data.totalCategories?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' },
+          { name: 'Total Comments', value: data.totalComments?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' },
+          { name: 'Total Views', value: data.totalViews?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' },
+          { name: 'Published Posts', value: data.publishedPosts?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' },
+          { name: 'Draft Posts', value: data.draftPosts?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' }
         ]);
       } catch (error) {
         console.warn('Could not fetch stats:', error);
         // Keep default values on error
       }
     };
-
     fetchStats();
   }, []);
 

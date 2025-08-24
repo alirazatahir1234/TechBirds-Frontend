@@ -21,7 +21,7 @@ const PageForm = ({ initialData, onSave, loading, error }) => {
       <div className="bg-white rounded-lg shadow-lg p-8">
         <div className="flex items-center mb-6 gap-2">
           <FileText className="w-7 h-7 text-blue-600" />
-          <h2 className="text-2xl font-bold">{initialData ? 'Edit Page' : 'Add New Page'}</h2>
+          <h2 className="text-2xl font-bold">{initialData ? 'Edit Post' : 'Add New Post'}</h2>
         </div>
         {error && <div className="mb-4 text-red-500">{error}</div>}
         <form onSubmit={handleSubmit} className="space-y-6">

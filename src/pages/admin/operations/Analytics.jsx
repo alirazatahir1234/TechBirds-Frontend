@@ -153,7 +153,7 @@ export default function Analytics() {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Articles</p>
+              <p className="text-sm font-medium text-gray-600">Total Posts</p>
               <p className="text-2xl font-bold text-gray-900">{analytics.overview.totalArticles}</p>
             </div>
             <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">

@@ -161,7 +161,7 @@ const AdminDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           icon={FileText}
-          title="Total Articles"
+          title="Total Posts"
           value={stats.totalArticles}
           color="bg-blue-500"
           isLoading={loading}
