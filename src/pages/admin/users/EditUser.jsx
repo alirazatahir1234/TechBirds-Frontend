@@ -1,56 +1,50 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast, { Toaster } from 'react-hot-toast';
-import { 
-  ArrowLeft, 
-  Save, 
-  User, 
-  Mail, 
-  Globe, 
-  Twitter, 
-  Linkedin,
-  Eye,
-  EyeOff,
-  Upload,
-  X
-} from 'lucide-react';
-import { userAPI } from '../../../services/api';
+import { ArrowLeft, Save, User, Mail, Globe, Twitter, Linkedin, Eye, EyeOff, X } from 'lucide-react';
+import axios from 'axios';
+import api from '../../../services/api';
 
-export default function CreateUser() {
+export default function EditUser() {
   const navigate = useNavigate();
   const location = useLocation();
-  const editUser = location.state?.user;
-  // Remove avatar handler
-  const removeAvatar = () => {
-    setFormData(prev => ({ ...prev, avatar: null }));
-    setAvatarPreview(null);
-  };
+  const user = location.state?.user;
+
+  // Add validation to ensure user data exists
+  useEffect(() => {
+    if (!user || !user.id) {
+      console.error('No user data provided');
+      toast.error('No user data provided. Redirecting to users list.');
+      setTimeout(() => {
+        navigate('/admin/users');
+      }, 2000);
+    }
+  }, [user, navigate]);
 
   const [formData, setFormData] = useState({
-    firstName: editUser?.firstName || '',
-    lastName: editUser?.lastName || '',
-    email: editUser?.email || '',
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    name: user?.name || `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
+    bio: user?.bio || '',
+    avatar: user?.avatar || '',
+    website: user?.website || '',
+    twitter: user?.twitter || '',
+    linkedIn: user?.linkedIn || user?.linkedin || '', // Handle both possible field names
+    specialization: user?.specialization || '',
+    email: user?.email || '',
     password: '',
-    confirmPassword: '',
-    bio: editUser?.bio || '',
-    specialization: editUser?.specialization || '',
-    role: editUser?.role || 'User',
-    status: editUser?.isActive ? 'Active' : 'Inactive',
-    website: editUser?.website || '',
-    twitter: editUser?.twitter || '',
-    linkedin: editUser?.linkedin || '',
-    avatar: editUser?.avatar || null
+    role: user?.role || 'User',
+    isActive: user?.isActive ?? true
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [avatarPreview, setAvatarPreview] = useState(editUser?.avatar ? (typeof editUser.avatar === 'string' ? `data:image/png;base64,${editUser.avatar}` : null) : null);
   const [isLoading, setIsLoading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(user?.avatar ? (typeof user.avatar === 'string' ? `data:image/png;base64,${user.avatar}` : null) : null);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }));
   };
 
@@ -58,7 +52,6 @@ export default function CreateUser() {
     const file = e.target.files[0];
     if (file) {
       setFormData(prev => ({ ...prev, avatar: file }));
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setAvatarPreview(e.target.result);
@@ -67,7 +60,6 @@ export default function CreateUser() {
     }
   };
 
-  // Helper to convert file to base64
   const toBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -77,107 +69,139 @@ export default function CreateUser() {
     });
   };
 
+  const removeAvatar = () => {
+    setFormData(prev => ({ ...prev, avatar: '' }));
+    setAvatarPreview(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Only validate password if creating or changing password
-    if (!editUser || formData.password) {
-      const password = formData.password;
-      const passwordErrors = [];
-      if (password !== formData.confirmPassword) {
-        passwordErrors.push('Passwords do not match!');
-      }
-      if (!/[A-Z]/.test(password)) {
-        passwordErrors.push('Password must have at least one uppercase letter.');
-      }
-      if (!/[a-z]/.test(password)) {
-        passwordErrors.push('Password must have at least one lowercase letter.');
-      }
-      if (!/[0-9]/.test(password)) {
-        passwordErrors.push('Password must have at least one digit.');
-      }
-      if (!/[^A-Za-z0-9]/.test(password)) {
-        passwordErrors.push('Password must have at least one special character.');
-      }
-      if (password.length < 8) {
-        passwordErrors.push('Password must be at least 8 characters long.');
-      }
-      if (passwordErrors.length > 0) {
-        alert(passwordErrors.join('\n'));
-        return;
-      }
+    
+    if (!user || !user.id) {
+      alert('User data is missing. Please go back and try again.');
+      return;
     }
-
+    
     setIsLoading(true);
     try {
-      let avatarBase64 = null;
+      let avatarBase64 = '';
       if (formData.avatar && typeof formData.avatar !== 'string') {
         avatarBase64 = await toBase64(formData.avatar);
       } else if (typeof formData.avatar === 'string') {
         avatarBase64 = formData.avatar;
       }
-
-      // Transform the data to match backend expectations
-      const userData = {
+      
+      // Prepare payload according to your backend requirements
+      const payload = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password || undefined,
+        name: formData.name || `${formData.firstName} ${formData.lastName}`.trim(),
         bio: formData.bio || null,
-        specialization: formData.specialization || null,
-        role: formData.role,
-        isActive: formData.status?.toLowerCase() === 'active',
+        avatar: avatarBase64 || '',
         website: formData.website || null,
         twitter: formData.twitter || null,
-        linkedin: formData.linkedin || null,
-        avatar: avatarBase64
+        linkedIn: formData.linkedIn || null,
+        specialization: formData.specialization || null,
+        email: formData.email,
+        role: formData.role,
+        isActive: formData.isActive
       };
-      if (editUser) {
-        // Update user
-        await userAPI.updateUser(editUser.id, userData);
-        toast.success('User updated successfully!');
-      } else {
-        // Create user
-        await userAPI.createUser(userData);
-        toast.success('User created successfully!');
+      
+      // Only include password if provided
+      if (formData.password && formData.password.trim() !== '') {
+        payload.password = formData.password;
       }
-      setTimeout(() => {
-        navigate('/admin/users');
-      }, 1500);
+      
+      // Check for authentication token
+      let token = localStorage.getItem('token') || 
+                  localStorage.getItem('admin_token') || 
+                  localStorage.getItem('authToken');
+      
+      if (!token) {
+        alert('Authentication token not found. Please log in again.');
+        navigate('/admin/login');
+        return;
+      }
+
+      // Try multiple endpoints in case the backend API structure varies
+      const endpoints = [
+        `/users/${user.id}/profile`,
+        `/users/${user.id}`,
+        `/admin/users/${user.id}`
+      ];
+      
+      let lastError = null;
+      let success = false;
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await api.put(endpoint, payload, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            }
+          });
+
+          // If we get here, the request was successful
+          alert('User updated successfully!');
+          navigate('/admin/users');
+          success = true;
+          break;
+
+        } catch (error) {
+          lastError = error;
+          
+          // If it's a 405 Method Not Allowed, try the next endpoint
+          if (error.response?.status === 405) {
+            continue;
+          }
+          
+          // For other errors (like 401, 403, 400), don't continue trying
+          break;
+        }
+      }
+      
+      if (!success) {
+        if (lastError?.response?.data) {
+          setErrors(lastError.response.data);
+          alert(`Failed to update user: ${JSON.stringify(lastError.response.data)}`);
+        } else if (lastError?.response?.status) {
+          alert(`Failed to update user: HTTP ${lastError.response.status}: ${lastError.response.statusText}`);
+        } else if (lastError?.message) {
+          alert(`Failed to update user: ${lastError.message}`);
+        } else {
+          alert('Failed to update user: Unknown error');
+        }
+      }
+
     } catch (error) {
-      if (error.response) {
-        alert(`Failed to create user: ${JSON.stringify(error.response.data)}`);
+      if (error.response?.data) {
+        setErrors(error.response.data);
+        alert(`Error: ${JSON.stringify(error.response.data)}`);
       } else {
-        alert(`Failed to create user: ${error.message}`);
+        alert(`Network error: ${error.message}`);
       }
+    } finally {
       setIsLoading(false);
     }
   };
 
-
   return (
     <div className="max-w-4xl mx-auto">
       <Toaster position="top-right" />
-      {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center gap-4 mb-4">
-          <Link
-            to="/admin/users"
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Users
-          </Link>
-        </div>
-        
-  <h1 className="text-2xl font-bold text-gray-900">{editUser ? 'Edit User' : 'Add New User'}</h1>
-  <p className="text-gray-600">{editUser ? 'Update user details and save changes.' : 'Create a new user account for your team.'}</p>
+        <button
+          onClick={() => navigate('/admin/users')}
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Users
+        </button>
+        <h1 className="text-2xl font-bold text-gray-900">Edit User</h1>
+        <p className="text-gray-600">Update user details and save changes.</p>
       </div>
-
-      {/* Form */}
       <div className="bg-white rounded-lg shadow">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          
-          {/* Avatar Upload */}
           <div className="flex items-center gap-6">
             <div className="relative">
               {avatarPreview ? (
@@ -201,7 +225,6 @@ export default function CreateUser() {
                 </div>
               )}
             </div>
-            
             <div>
               <label className="block">
                 <span className="sr-only">Choose avatar</span>
@@ -215,13 +238,9 @@ export default function CreateUser() {
               <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
             </div>
           </div>
-
-          {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                First Name *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
               <input
                 type="text"
                 name="firstName"
@@ -231,11 +250,8 @@ export default function CreateUser() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
-            
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Last Name *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
               <input
                 type="text"
                 name="lastName"
@@ -246,12 +262,8 @@ export default function CreateUser() {
               />
             </div>
           </div>
-
-          {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -264,62 +276,29 @@ export default function CreateUser() {
               />
             </div>
           </div>
-
-          {/* Password */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Password *
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password *
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
+            <p className="text-xs text-gray-500 mt-1">Leave blank to keep current password.</p>
           </div>
-
-          {/* Role and Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Role
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
               <select
                 name="role"
                 value={formData.role}
@@ -329,32 +308,26 @@ export default function CreateUser() {
                 <option value="User">User</option>
                 <option value="Editor">Editor</option>
                 <option value="Admin">Admin</option>
+                <option value="Author">Author</option>
                 <option value="Contributor">Contributor</option>
               </select>
             </div>
-            
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-              >
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Suspended">Suspended</option>
-              </select>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <div className="flex items-center gap-2 mt-2">
+                <input
+                  type="checkbox"
+                  name="isActive"
+                  checked={formData.isActive}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                />
+                <span className="text-sm">Active</span>
+              </div>
             </div>
           </div>
-
-          {/* Specialization */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Specialization
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
             <input
               type="text"
               name="specialization"
@@ -364,12 +337,8 @@ export default function CreateUser() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-
-          {/* Bio */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Bio
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
             <textarea
               name="bio"
               value={formData.bio}
@@ -379,15 +348,10 @@ export default function CreateUser() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-
-          {/* Social Links */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Social Links</h3>
-            
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Website
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Website</label>
               <div className="relative">
                 <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -400,12 +364,9 @@ export default function CreateUser() {
                 />
               </div>
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Twitter
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Twitter</label>
                 <div className="relative">
                   <Twitter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
@@ -418,17 +379,14 @@ export default function CreateUser() {
                   />
                 </div>
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  LinkedIn
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn</label>
                 <div className="relative">
                   <Linkedin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
-                    name="linkedin"
-                    value={formData.linkedin}
+                    name="linkedIn"
+                    value={formData.linkedIn}
                     onChange={handleInputChange}
                     placeholder="linkedin.com/in/username"
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -437,15 +395,7 @@ export default function CreateUser() {
               </div>
             </div>
           </div>
-
-          {/* Submit Button */}
           <div className="flex justify-end gap-4 pt-6 border-t">
-            <Link
-              to="/admin/users"
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-            >
-              Cancel
-            </Link>
             <button
               type="submit"
               disabled={isLoading}
@@ -454,12 +404,12 @@ export default function CreateUser() {
               {isLoading ? (
                 <>
                   <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></div>
-                  {editUser ? 'Saving...' : 'Creating...'}
+                  Saving...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4" />
-                  {editUser ? 'Save Changes' : 'Create User'}
+                  Save Changes
                 </>
               )}
             </button>

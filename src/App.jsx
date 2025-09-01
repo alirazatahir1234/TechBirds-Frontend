@@ -22,6 +22,7 @@ import PageForm from './pages/admin/pages/PageForm';
 import CategoriesManager from './pages/admin/categories/CategoriesManager';
 import UsersManager from './pages/admin/users/UsersManager';
 import CreateUser from './pages/admin/users/CreateUser';
+import EditUser from './pages/admin/users/EditUser';
 import UserRoles from './pages/admin/users/UserRoles';
 import NewsletterManager from './pages/admin/newsletter/NewsletterManager';
 import CommentsManager from './pages/admin/comments/CommentsManager';
@@ -70,11 +71,13 @@ function App() {
               {/* Users Management (Primary Routes) */}
               <Route path="users" element={<UsersManager />} />
               <Route path="users/create" element={<CreateUser />} />
+              <Route path="users/:id/edit" element={<EditUser />} />
               <Route path="users/roles" element={<UserRoles />} />
               
               {/* Authors Management (Backward Compatibility) */}
               <Route path="authors" element={<UsersManager />} />
               <Route path="authors/create" element={<CreateUser />} />
+              <Route path="authors/:id/edit" element={<EditUser />} />
               <Route path="authors/roles" element={<UserRoles />} />
               
               {/* Comments Management */}

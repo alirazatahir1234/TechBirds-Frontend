@@ -16,15 +16,10 @@ import {
 } from 'lucide-react';
 import { userAPI } from '../../../services/api';
 
-export default function CreateUser() {
+export default function UserForm() {
   const navigate = useNavigate();
   const location = useLocation();
   const editUser = location.state?.user;
-  // Remove avatar handler
-  const removeAvatar = () => {
-    setFormData(prev => ({ ...prev, avatar: null }));
-    setAvatarPreview(null);
-  };
 
   const [formData, setFormData] = useState({
     firstName: editUser?.firstName || '',
@@ -75,6 +70,11 @@ export default function CreateUser() {
       reader.onerror = reject;
       reader.readAsDataURL(file);
     });
+  };
+
+  const removeAvatar = () => {
+    setFormData(prev => ({ ...prev, avatar: null }));
+    setAvatarPreview(null);
   };
 
   const handleSubmit = async (e) => {
@@ -145,14 +145,13 @@ export default function CreateUser() {
       }, 1500);
     } catch (error) {
       if (error.response) {
-        alert(`Failed to create user: ${JSON.stringify(error.response.data)}`);
+        alert(`Failed to save user: ${JSON.stringify(error.response.data)}`);
       } else {
-        alert(`Failed to create user: ${error.message}`);
+        alert(`Failed to save user: ${error.message}`);
       }
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -168,15 +167,12 @@ export default function CreateUser() {
             Back to Users
           </Link>
         </div>
-        
-  <h1 className="text-2xl font-bold text-gray-900">{editUser ? 'Edit User' : 'Add New User'}</h1>
-  <p className="text-gray-600">{editUser ? 'Update user details and save changes.' : 'Create a new user account for your team.'}</p>
+        <h1 className="text-2xl font-bold text-gray-900">{editUser ? 'Edit User' : 'Add New User'}</h1>
+        <p className="text-gray-600">{editUser ? 'Update user details and save changes.' : 'Create a new user account for your team.'}</p>
       </div>
-
       {/* Form */}
       <div className="bg-white rounded-lg shadow">
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          
           {/* Avatar Upload */}
           <div className="flex items-center gap-6">
             <div className="relative">
@@ -201,7 +197,6 @@ export default function CreateUser() {
                 </div>
               )}
             </div>
-            
             <div>
               <label className="block">
                 <span className="sr-only">Choose avatar</span>
@@ -215,7 +210,6 @@ export default function CreateUser() {
               <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 2MB</p>
             </div>
           </div>
-
           {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -231,7 +225,6 @@ export default function CreateUser() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Last Name *
@@ -246,7 +239,6 @@ export default function CreateUser() {
               />
             </div>
           </div>
-
           {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -264,7 +256,6 @@ export default function CreateUser() {
               />
             </div>
           </div>
-
           {/* Password */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -277,7 +268,7 @@ export default function CreateUser() {
                   name="password"
                   value={formData.password}
                   onChange={handleInputChange}
-                  required
+                  required={!editUser}
                   className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
                 <button
@@ -289,7 +280,6 @@ export default function CreateUser() {
                 </button>
               </div>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Confirm Password *
@@ -300,7 +290,7 @@ export default function CreateUser() {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
-                  required
+                  required={!editUser}
                   className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
                 <button
@@ -313,7 +303,6 @@ export default function CreateUser() {
               </div>
             </div>
           </div>
-
           {/* Role and Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
@@ -332,7 +321,6 @@ export default function CreateUser() {
                 <option value="Contributor">Contributor</option>
               </select>
             </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Status
@@ -349,7 +337,6 @@ export default function CreateUser() {
               </select>
             </div>
           </div>
-
           {/* Specialization */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -364,7 +351,6 @@ export default function CreateUser() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-
           {/* Bio */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -379,11 +365,9 @@ export default function CreateUser() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
           </div>
-
           {/* Social Links */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Social Links</h3>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Website
@@ -400,7 +384,6 @@ export default function CreateUser() {
                 />
               </div>
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -418,7 +401,6 @@ export default function CreateUser() {
                   />
                 </div>
               </div>
-              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   LinkedIn
@@ -437,7 +419,6 @@ export default function CreateUser() {
               </div>
             </div>
           </div>
-
           {/* Submit Button */}
           <div className="flex justify-end gap-4 pt-6 border-t">
             <Link

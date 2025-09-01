@@ -416,7 +416,7 @@ const DashboardContent = ({ stats }) => {
         <div className="mt-8">
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {stats.map((item, index) => {
-              const icons = [BookOpen, Users, MessageSquare, Mail];
+              const icons = [BookOpen, Users, MessageSquare,Mail];
               const colors = ['bg-blue-500', 'bg-green-500', 'bg-yellow-500', 'bg-purple-500'];
               const IconComponent = icons[index];
               const colorClass = colors[index];
@@ -427,7 +427,7 @@ const DashboardContent = ({ stats }) => {
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
                         <div className={`w-8 h-8 ${colorClass} rounded-md flex items-center justify-center`}>
-                          <IconComponent className="h-5 w-5 text-white" />
+                          {/* <IconComponent className="h-5 w-5 text-white" /> */}
                         </div>
                       </div>
                       <div className="ml-5 w-0 flex-1">

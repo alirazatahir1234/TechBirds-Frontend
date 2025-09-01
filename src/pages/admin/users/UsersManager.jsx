@@ -7,6 +7,7 @@ const getAvatarUrl = (avatar) => {
   return avatar;
 };
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Users, 
   Search, 
@@ -17,13 +18,63 @@ import {
   User,
   Crown,
   Edit,
-  Eye
+  Eye,
+  Trash2
 } from 'lucide-react';
 import { userAPI } from '../../../services/api';
 
 
 
 const UsersManager = () => {
+  // Handler for edit button (to be implemented: open modal or navigate to edit page)
+  const navigate = useNavigate();
+  const handleEditUser = (user) => {
+  // Redirect to edit user page, passing user data for editing
+  navigate(`/admin/users/${user.id}/edit`, { state: { user } });
+  };
+
+  // Handler for delete button
+  const handleDeleteUser = async (user) => {
+    // Show confirmation dialog
+    const isConfirmed = window.confirm(
+      `Are you sure you want to delete user "${user.name || `${user.firstName} ${user.lastName}`}"?\n\nThis action cannot be undone.`
+    );
+    
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Call the DELETE API
+      await userAPI.deleteUser(user.id);
+      
+      // Remove user from local state
+      setUsers(prevUsers => prevUsers.filter(u => u.id !== user.id));
+      
+      // Show success message
+      alert('User deleted successfully!');
+      
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      
+      let errorMessage = 'Failed to delete user.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You do not have permission to delete users.';
+      } else if (error.response?.status === 404) {
+        errorMessage = 'User not found.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
   // Remove currentUserRole logic
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -204,101 +255,87 @@ const UsersManager = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
           {filteredUsers.map((user) => (
-            <div key={user.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              {/* User Avatar & Basic Info */}
-              <div className="flex items-start space-x-4">
-                <div className="flex-shrink-0">
+            <div key={user.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 p-4 flex flex-col justify-between transition-all hover:shadow-xl hover:border-blue-200 group min-h-[320px]">
+              {/* Avatar & Name */}
+            <div className="flex items-center gap-4 pb-3 border-b border-gray-100">
+                <div className="relative">
                   {getAvatarUrl(user.avatar) ? (
                     <img
-                      className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
+                      className="h-16 w-16 rounded-full object-cover border-4 border-blue-100 group-hover:border-blue-400 transition-all"
                       src={getAvatarUrl(user.avatar)}
                       alt={user.name || `${user.firstName} ${user.lastName}`}
                       onError={(e) => {
                         e.target.style.display = 'none';
-                        e.target.nextSibling.style.display = 'flex';
                       }}
                     />
-                  ) : null}
-                  <div 
-                    className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center"
-                    style={{ display: getAvatarUrl(user.avatar) ? 'none' : 'flex' }}
-                  >
-                    <User className="h-8 w-8 text-gray-400" />
-                  </div>
+                  ) : (
+                    <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center">
+                      <User className="h-8 w-8 text-gray-400" />
+                    </div>
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900 truncate">
-                      {user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unnamed User'}
-                    </h3>
-                    <div className={`px-2 py-1 rounded-full border text-xs font-medium flex items-center gap-1 ${getRoleColor(user.role)}`}>
-                      {getRoleIcon(user.role)}
-                      {user.role || 'User'}
-                    </div>
-                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 truncate">
+                    {user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Unnamed User'}
+                  </h3>
                   {user.specialization && (
                     <p className="text-sm text-blue-600 font-medium mt-1">
                       {user.specialization}
                     </p>
                   )}
+                  <div className={`mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-semibold ${getRoleColor(user.role)}`}> 
+                    {getRoleIcon(user.role)}
+                    {user.role || 'User'}
+                  </div>
                 </div>
               </div>
-
               {/* User Bio */}
               {user.bio && (
-                <div className="mt-4">
-                  <p className="text-sm text-gray-600 line-clamp-2">
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500 italic line-clamp-2">
                     {user.bio}
                   </p>
                 </div>
               )}
-
               {/* Contact Information */}
-              <div className="mt-4 space-y-2">
+            <div className="mt-3 space-y-1">
                 <div className="flex items-center text-sm text-gray-600">
                   <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">
+                  <span className="truncate font-medium">
                     {user.email ? user.email : (user.name ? user.name : 'Not exist')}
                   </span>
                 </div>
                 {user.website && (
                   <div className="flex items-center text-sm text-gray-600">
                     <Globe className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <a 
-                      href={user.website} 
-                      target="_blank" 
+                    <a
+                      href={user.website}
+                      target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 truncate"
+                      className="text-blue-600 hover:text-blue-800 font-medium truncate"
                     >
                       {user.website.replace(/^https?:\/\//, '')}
                     </a>
                   </div>
                 )}
               </div>
-
               {/* Stats & Dates */}
-              <div className="mt-4 pt-4 border-t border-gray-100">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Articles</p>
-                    <p className="font-semibold text-gray-900">{user.articleCount || 0}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Total Views</p>
-                    <p className="font-semibold text-gray-900">{user.totalViews || 0}</p>
-                  </div>
+            <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-2 gap-3 text-sm">
+                <div className="flex flex-col items-start">
+                  <span className="text-gray-400">Posts</span>
+                  <span className="font-bold text-gray-900 text-lg">{user.articleCount || 0}</span>
                 </div>
-                <div className="mt-3 text-xs text-gray-500">
-                  <div className="flex justify-between">
-                    <span>Joined: {formatDate(user.joinedAt)}</span>
-                    {user.lastActive && (
-                      <span>Active: {formatDate(user.lastActive)}</span>
-                    )}
-                  </div>
+                <div className="flex flex-col items-start">
+                  <span className="text-gray-400">Total Views</span>
+                  <span className="font-bold text-gray-900 text-lg">{user.totalViews || 0}</span>
+                </div>
+                <div className="col-span-2 mt-2 flex justify-between text-xs text-gray-500">
+                  <span>Joined: {formatDate(user.joinedAt)}</span>
+                  {user.lastActive && (
+                    <span>Active: {formatDate(user.lastActive)}</span>
+                  )}
                 </div>
               </div>
-
-
               {(user.twitter || user.linkedIn) && (
                 <div className="mt-4 flex gap-2">
                   {user.twitter && (
@@ -306,7 +343,7 @@ const UsersManager = () => {
                       href={user.twitter}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
+                      className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors shadow-sm"
                       title="Twitter"
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -319,7 +356,7 @@ const UsersManager = () => {
                       href={user.linkedIn}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="p-2 bg-blue-50 text-blue-600 rounded-md hover:bg-blue-100 transition-colors"
+                      className="p-2 bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition-colors shadow-sm"
                       title="LinkedIn"
                     >
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -329,6 +366,23 @@ const UsersManager = () => {
                   )}
                 </div>
               )}
+              {/* Action Buttons at bottom, always visible */}
+            <div className="mt-6 flex justify-end gap-3">
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded-full shadow hover:bg-red-700 text-sm font-semibold flex items-center gap-2 transition-all"
+                  onClick={() => handleDeleteUser(user)}
+                  title="Delete user"
+                >
+                  <Trash2 className="inline-block h-4 w-4" /> Delete
+                </button>
+                <button
+                  className="px-5 py-2 bg-blue-600 text-white rounded-full shadow hover:bg-blue-700 text-base font-semibold flex items-center gap-2 transition-all"
+                  onClick={() => handleEditUser(user)}
+                  title="Edit user profile"
+                >
+                  <Edit className="inline-block h-5 w-5" /> Edit
+                </button>
+              </div>
             </div>
           ))}
         </div>
