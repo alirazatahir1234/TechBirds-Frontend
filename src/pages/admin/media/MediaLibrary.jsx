@@ -64,15 +64,51 @@ export default function MediaLibrary() {
   const onFilesSelected = async (ev) => {
     const file = ev.target.files?.[0];
     if (!file) return;
+    
+ 
     try {
       setLoading(true);
-      await mediaAPI.upload({ file, title: file.name, altText: file.name, caption: '', description: '' });
+      setError(''); // Clear any previous errors
+      
+      const result = await mediaAPI.upload({ 
+        file, 
+        title: file.name, 
+        altText: file.name, 
+        caption: '', 
+        description: '' 
+      });
+     
       // Reset input to allow re-uploading same file
       ev.target.value = '';
       await fetchMedia();
+      
     } catch (e) {
-      console.error('Upload failed', e);
-      setError(e?.response?.data?.message || e.message || 'Upload failed');
+      console.error('Upload failed - Full error:', e);
+      console.error('Error response:', e.response?.data);
+      console.error('Error status:', e.response?.status);
+      
+      let errorMessage = 'Upload failed';
+      
+      if (e.response?.status === 405) {
+        errorMessage = 'Upload endpoint not supported. The backend may not have media upload functionality implemented.';
+      } else if (e.response?.status === 400) {
+        const backendMessage = e.response?.data?.message || e.response?.data?.error || JSON.stringify(e.response?.data);
+        errorMessage = `Bad request: ${backendMessage}. The backend expects different data format.`;
+      } else if (e.response?.status === 413) {
+        errorMessage = 'File too large. Please select a smaller file.';
+      } else if (e.response?.status === 415) {
+        errorMessage = 'Unsupported file type. Please select a valid image file.';
+      } else if (e.response?.status === 401) {
+        errorMessage = 'Authentication required. Please log in again.';
+      } else if (e.response?.status === 403) {
+        errorMessage = 'Permission denied. You may not have permission to upload files.';
+      } else if (e.response?.data?.message) {
+        errorMessage = e.response.data.message;
+      } else if (e.message) {
+        errorMessage = e.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

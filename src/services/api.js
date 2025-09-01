@@ -1296,18 +1296,118 @@ export const pagesAPI = {
 export const mediaAPI = {
   // Upload media with metadata
   upload: async ({ file, title, altText, caption, description }) => {
-    const formData = new FormData();
     if (!file) throw new Error('File is required');
-    formData.append('file', file);
-    if (title) formData.append('title', title);
-    if (altText) formData.append('altText', altText);
-    if (caption) formData.append('caption', caption);
-    if (description) formData.append('description', description);
 
-    const response = await api.post('/media/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data;
+    // Try multiple endpoints with different data formats
+    const uploadAttempts = [
+      // Attempt 1: Exact format matching the curl command
+      {
+        endpoint: '/Media',
+        prepareData: () => {
+          const formData = new FormData();
+          formData.append('FileUpload', file);
+          formData.append('Title', title || 'string');
+          formData.append('AltText', altText || 'string');
+          formData.append('Caption', caption || 'string');
+          formData.append('Description', description || 'string');
+          return formData;
+        }
+      },
+      // Attempt 2: Alternative with lowercase field names
+      {
+        endpoint: '/media',
+        prepareData: () => {
+          const formData = new FormData();
+          formData.append('FileUpload', file);
+          formData.append('title', title || 'string');
+          formData.append('altText', altText || 'string');
+          formData.append('caption', caption || 'string');
+          formData.append('description', description || 'string');
+          return formData;
+        }
+      },
+      // Attempt 3: Original format with all metadata
+      {
+        endpoint: '/media/upload',
+        prepareData: () => {
+          const formData = new FormData();
+          formData.append('file', file);
+          if (title) formData.append('title', title);
+          if (altText) formData.append('altText', altText);
+          if (caption) formData.append('caption', caption);
+          if (description) formData.append('description', description);
+          return formData;
+        }
+      },
+      // Attempt 4: RESTful endpoint with metadata
+      {
+        endpoint: '/media',
+        prepareData: () => {
+          const formData = new FormData();
+          formData.append('file', file);
+          if (title) formData.append('title', title);
+          if (altText) formData.append('altText', altText);
+          if (caption) formData.append('caption', caption);
+          if (description) formData.append('description', description);
+          return formData;
+        }
+      },
+      // Attempt 5: Simple file upload only
+      {
+        endpoint: '/media',
+        prepareData: () => {
+          const formData = new FormData();
+          formData.append('file', file);
+          return formData;
+        }
+      },
+      // Attempt 6: Simple upload endpoint
+      {
+        endpoint: '/upload',
+        prepareData: () => {
+          const formData = new FormData();
+          formData.append('file', file);
+          return formData;
+        }
+      }
+    ];
+    
+    let lastError = null;
+    
+    for (const attempt of uploadAttempts) {
+      try {
+        const formData = attempt.prepareData();
+        
+        const response = await api.post(attempt.endpoint, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        
+        console.log(`Upload successful with endpoint: ${attempt.endpoint}`);
+        return response.data;
+        
+      } catch (error) {
+        console.log(`Upload failed with endpoint ${attempt.endpoint}:`, error.response?.status, error.response?.data);
+        lastError = error;
+        
+        // If it's a 405 Method Not Allowed, try the next endpoint
+        if (error.response?.status === 405) {
+          continue;
+        }
+        
+        // If it's a 400 Bad Request, try next format (might be wrong field names)
+        if (error.response?.status === 400) {
+          continue;
+        }
+        
+        // For authentication errors (401, 403), stop trying
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          break;
+        }
+      }
+    }
+    
+    // If all attempts failed, throw the last error
+    throw lastError;
   },
 
   // List media with filters/pagination

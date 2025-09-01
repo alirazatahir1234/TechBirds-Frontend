@@ -19,7 +19,10 @@ import {
   Crown,
   Edit,
   Eye,
-  Trash2
+  Trash2,
+  PenTool,
+  FileText,
+  Shield
 } from 'lucide-react';
 import { userAPI } from '../../../services/api';
 
@@ -92,7 +95,6 @@ const UsersManager = () => {
       setError(null);
       
       const response = await userAPI.getUsers();
-      console.log('API Response:', response);
       
       // Handle the response structure from /api/Users
       if (response && Array.isArray(response)) {
@@ -126,10 +128,16 @@ const UsersManager = () => {
 
   const getRoleColor = (role) => {
     switch (role?.toLowerCase()) {
+      case 'superadmin':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'admin':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'editor':
         return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'author':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+      case 'contributor':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'subscriber':
         return 'bg-green-100 text-green-800 border-green-200';
       default:
@@ -139,10 +147,18 @@ const UsersManager = () => {
 
   const getRoleIcon = (role) => {
     switch (role?.toLowerCase()) {
+      case 'superadmin':
+        return <Shield className="h-3 w-3" />;
       case 'admin':
         return <Crown className="h-3 w-3" />;
       case 'editor':
         return <Edit className="h-3 w-3" />;
+      case 'author':
+        return <PenTool className="h-3 w-3" />;
+      case 'contributor':
+        return <FileText className="h-3 w-3" />;
+      case 'subscriber':
+        return <Eye className="h-3 w-3" />;
       default:
         return <User className="h-3 w-3" />;
     }
@@ -232,9 +248,12 @@ const UsersManager = () => {
             className="p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
           >
             <option value="all">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="editor">Editor</option>
             <option value="subscriber">Subscriber</option>
+            <option value="contributor">Contributor</option>
+            <option value="author">Author</option>
+            <option value="editor">Editor</option>
+            <option value="admin">Admin</option>
+            <option value="superadmin">SuperAdmin</option>
           </select>
         </div>
       </div>
