@@ -111,7 +111,7 @@ const AdminLayout = () => {
       icon: BookOpen,
       children: [
         { name: 'All Posts', href: '/admin/posts', icon: List },
-        { name: 'Add New Post', href: '/admin/posts/create', icon: PlusCircle },
+        { name: 'Add New Post', href: '/admin/posts/new', icon: PlusCircle },
         { name: 'Tags', href: '/admin/tags', icon: Tag }
       ]
     },
@@ -120,9 +120,17 @@ const AdminLayout = () => {
       icon: FileText,
       children: [
         { name: 'All Pages', href: '/admin/pages', icon: List },
-        { name: 'Add New Page', href: '/admin/pages/create', icon: PlusCircle }
+        { name: 'Add New Page', href: '/admin/pages/new', icon: PlusCircle }
       ]
     },
+      {
+        name: 'Dynamic Pages',
+        icon: Edit3,
+        children: [
+          { name: 'View Dynamic Pages', href: '/admin/dynamic-pages', icon: List },
+          { name: 'Add Dynamic Page', href: '/admin/dynamic-pages/new', icon: PlusCircle }
+        ]
+      },
     {
       name: 'Categories',
       href: '/admin/categories',
@@ -134,7 +142,7 @@ const AdminLayout = () => {
       icon: Users,
       children: [
         { name: 'All Users', href: '/admin/users', icon: Users },
-        { name: 'Add New User', href: '/admin/users/create', icon: UserPlus },
+  { name: 'Add New User', href: '/admin/users/new', icon: UserPlus },
         { name: 'User Roles', href: '/admin/users/roles', icon: Settings }
       ]
     },

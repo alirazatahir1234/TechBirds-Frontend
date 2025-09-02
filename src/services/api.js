@@ -1439,5 +1439,66 @@ export const mediaAPI = {
 
 export default api;
 
+// Additional convenience functions for the main api object
+api.getPageBySlug = async (slug) => {
+  try {
+    return await pagesAPI.getBySlug(slug);
+  } catch (error) {
+    // If pages API doesn't work, create mock data for development
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Pages API not available, using mock data for development');
+      return {
+        id: 1,
+        title: `Dynamic Page: ${slug}`,
+        slug: slug,
+        template: 'homepage',
+        status: 'published',
+        sections: [
+          {
+            type: 'hero',
+            props: {
+              title: 'Welcome to Our Dynamic Page',
+              subtitle: 'This is a demo page created with our CMS system',
+              posts: []
+            }
+          },
+          {
+            type: 'featured-posts',
+            props: {
+              title: 'Featured Content',
+              posts: []
+            }
+          }
+        ]
+      };
+    }
+    throw error;
+  }
+};
+
+api.getPosts = async (page = 1, limit = 10, filters = {}) => {
+  return await postsAPI.getPosts({ page, pageSize: limit, ...filters });
+};
+
+api.getPostById = async (id) => {
+  return await postsAPI.getPostById(id);
+};
+
+api.getPostsByCategory = async (categoryId, page = 1, limit = 10) => {
+  return await postsAPI.getPosts({ categoryId, page, pageSize: limit });
+};
+
+api.getTrendingArticles = async (limit = 5) => {
+  return await postsAPI.getPosts({ pageSize: limit, sortBy: 'views', sortOrder: 'desc' });
+};
+
+api.getCategories = async () => {
+  return await categoryAPI.getCategories();
+};
+
+api.getTags = async () => {
+  return await adminAPI.getTags();
+};
+
 // Export role mapping functions for use in components
 export { mapToNewRoleSystem, mapFromNewRoleSystem };

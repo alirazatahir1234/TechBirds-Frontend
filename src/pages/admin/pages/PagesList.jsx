@@ -62,6 +62,21 @@ const PagesList = ({ pages, onEdit, onDelete, loading, error }) => {
   const selectAll = () => {
     setSelected(paged.map(p => p.id));
   };
+  // Fix: Add bulkDelete function
+  const bulkDelete = () => {
+    selected.forEach(id => {
+      const page = pages.find(p => p.id === id);
+      if (page) {
+        onDelete(page);
+      }
+    });
+    setSelected([]);
+  };
+
+  // Fix: Add clearSelected function
+  const clearSelected = () => {
+    setSelected([]);
+  };
   return (
     <div className="max-w-6xl mx-auto mt-8">
       <div className="flex items-center gap-2 mb-6">

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { userAPI } from '../../../services/api';
 
-export default function UsersManager() {
+export default function AuthorsManager() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -203,6 +203,8 @@ export default function UsersManager() {
         updateData.password = formData.password.trim();
       }
       
+      // Truncate avatar URL for logging purposes
+      console.log({
         ...updateData,
         avatar: updateData.avatar?.substring(0, 100) + (updateData.avatar?.length > 100 ? '...' : '')
       });
@@ -215,6 +217,7 @@ export default function UsersManager() {
         resetForm();
       }
     } catch (error) {
+      console.error({
         status: error.response?.status,
         data: error.response?.data,
         message: error.message
@@ -275,7 +278,7 @@ export default function UsersManager() {
       linkedin: user.linkedin || '',
       specialization: user.specialization || '',
       status: (user.status || 'active').toLowerCase(),
-      role: (author.role || 'author').toLowerCase()
+      role: (user.role || 'author').toLowerCase()
     });
   };
 
