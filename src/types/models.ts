@@ -1,11 +1,4 @@
-// ===============================
-// TechBirds - Article & Post Models
-// TypeScript Definitions
-// ===============================
 
-// ===============================
-// Core Author Interface
-// ===============================
 export interface Author {
   id: number;
   firstName?: string;
@@ -34,9 +27,7 @@ export interface Author {
   totalViews?: number;
 }
 
-// ===============================
-// Category Interface
-// ===============================
+
 export interface Category {
   id: number;
   name: string;
@@ -59,9 +50,7 @@ export interface Category {
   sortOrder?: number;
 }
 
-// ===============================
-// Article Interface (Public Content)
-// ===============================
+
 export interface Article {
   // Core Properties
   id: number;

@@ -89,7 +89,6 @@ const PostsList = () => {
         setPagination(prev => ({ ...prev, total: response ? 1 : 0 }));
       }
     } catch (error) {
-      console.error('❌ PostsList: Error fetching posts:', error.message);
       setError(`Failed to load posts: ${error.message}`);
       setPosts([]);
     } finally {
@@ -102,7 +101,6 @@ const PostsList = () => {
       const categoriesData = await adminAPI.getCategories();
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
       // Don't show error for categories as it's not critical
     }
   };
@@ -138,7 +136,6 @@ const PostsList = () => {
         await fetchPosts(); // Refresh the list
       }
     } catch (error) {
-      console.error(`Error performing bulk ${action}:`, error);
       setError(`Failed to ${action} selected posts. Please try again.`);
     }
   };
@@ -153,7 +150,6 @@ const PostsList = () => {
       await adminAPI.deletePost(postId);
       await fetchPosts(); // Refresh the list
     } catch (error) {
-      console.error('Error deleting post:', error);
       setError('Failed to delete post. Please try again.');
     }
   };
@@ -241,37 +237,7 @@ const PostsList = () => {
         </div>
       )}
 
-      {/* Debug Info - Temporary */}
-      <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-        <h4 className="text-sm font-medium text-blue-800 mb-2">🔍 Debug Info</h4>
-        <div className="text-xs text-blue-700 space-y-1">
-          <p><strong>Posts Count:</strong> {filteredPosts.length}</p>
-          <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
-          <p><strong>Error:</strong> {error || 'None'}</p>
-          <p><strong>Status Filter:</strong> {statusFilter}</p>
-          <p><strong>Category Filter:</strong> {categoryFilter}</p>
-          <p><strong>Search Term:</strong> "{searchTerm}"</p>
-          {filteredPosts.length > 0 && (
-            <>
-              <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                <p className="font-medium text-yellow-800">🔍 User Info Analysis (New Identity System):</p>
-                {filteredPosts.slice(0, 3).map((post, idx) => (
-                  <div key={idx} className="mt-1 text-xs">
-                    <strong>Post {idx + 1}:</strong> UserID: {post.userId || post.authorId || 'N/A'}, 
-                    UserName: "{post.user?.firstName || post.author?.name || post.authorName || 'Unknown'}"
-                  </div>
-                ))}
-              </div>
-              <details className="mt-2">
-                <summary className="cursor-pointer font-medium text-blue-800">📋 View Full Posts Data ({filteredPosts.length} posts)</summary>
-                <pre className="mt-2 bg-white p-2 rounded border text-xs overflow-auto max-h-40">
-                  {JSON.stringify(filteredPosts.slice(0, 3), null, 2)}
-                </pre>
-              </details>
-            </>
-          )}
-        </div>
-      </div>
+
 
       {/* Filters and Search */}
       <div className="bg-white p-4 rounded-lg shadow space-y-4">

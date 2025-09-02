@@ -30,7 +30,6 @@ const ArticlePage = () => {
         }
       } catch (err) {
         setError('Failed to load article. Please try again later.');
-        console.error('Error fetching article:', err);
         
         // Mock article for development
         setArticle({
@@ -98,7 +97,6 @@ const ArticlePage = () => {
           url: window.location.href,
         });
       } catch (err) {
-        console.log('Share cancelled');
       }
     } else {
       // Fallback to copying URL

@@ -60,7 +60,6 @@ const UsersManager = () => {
       alert('User deleted successfully!');
       
     } catch (error) {
-      console.error('Error deleting user:', error);
       
       let errorMessage = 'Failed to delete user.';
       if (error.response?.data?.message) {
@@ -105,7 +104,6 @@ const UsersManager = () => {
         setUsers([]);
       }
     } catch (error) {
-      console.error('Error fetching users:', error);
       setError('Failed to load users. Please try again.');
       setUsers([]);
     } finally {

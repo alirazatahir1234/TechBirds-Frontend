@@ -40,7 +40,6 @@ const AdminLogin = () => {
         setError(result.error);
       }
     } catch (error) {
-      console.error('Login error:', error);
       setError('Login failed. Please try again.');
     }
     

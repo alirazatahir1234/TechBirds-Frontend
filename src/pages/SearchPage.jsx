@@ -55,7 +55,6 @@ const SearchPage = () => {
       setPage(pageNum);
     } catch (err) {
       setError('Failed to search articles. Please try again.');
-      console.error('Search error:', err);
       
       // Mock search results for development
       const mockResults = [

@@ -28,7 +28,6 @@ const UserPage = () => {
         setPage(1);
       } catch (err) {
         setError('Failed to load user. Please try again later.');
-        console.error('Error fetching user data:', err);
         
         // Mock data for development
         setUser({
@@ -83,7 +82,6 @@ const UserPage = () => {
       setPage(nextPage);
       setHasMore(articleList.length === 12);
     } catch (err) {
-      console.error('Error loading more articles:', err);
     }
   };
 

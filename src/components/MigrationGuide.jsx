@@ -298,7 +298,6 @@ export const UserManagementExample = () => {
       
       setUsers(response.users || response);
     } catch (error) {
-      console.error('Failed to fetch users:', error);
     } finally {
       setLoading(false);
     }

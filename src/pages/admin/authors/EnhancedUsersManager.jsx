@@ -109,7 +109,6 @@ export default function EnhancedUsersManager() {
       const response = await adminAPI.getAuthors();
       setUsers(Array.isArray(response) ? response : []);
     } catch (error) {
-      console.error('Error fetching users:', error);
       setError('Failed to load users. The system may be transitioning between APIs.');
     } finally {
       setLoading(false);
@@ -148,7 +147,6 @@ export default function EnhancedUsersManager() {
         setEditingId(null);
       }
     } catch (error) {
-      console.error('Error creating user:', error);
       if (error.response?.status === 400) {
         const errorMessage = error.response?.data?.message || error.response?.data || 'Invalid data provided';
         setError(`Validation Error: ${errorMessage}`);
@@ -171,7 +169,6 @@ export default function EnhancedUsersManager() {
       
       // If avatar looks like base64 data (very long string), use random avatar instead
       if (avatarUrl && avatarUrl.length > 500) {
-        console.warn('Avatar data too long, using random avatar instead');
         avatarUrl = getRandomAvatar();
       }
       
@@ -194,7 +191,6 @@ export default function EnhancedUsersManager() {
         updateData.password = formData.password.trim();
       }
       
-      console.log('🔄 Updating user with enhanced data:', {
         ...updateData,
         avatar: updateData.avatar?.substring(0, 100) + (updateData.avatar?.length > 100 ? '...' : '')
       });
@@ -207,8 +203,6 @@ export default function EnhancedUsersManager() {
         resetForm();
       }
     } catch (error) {
-      console.error('❌ Error updating user:', error);
-      console.error('❌ Error details:', {
         status: error.response?.status,
         data: error.response?.data,
         message: error.message
@@ -234,7 +228,6 @@ export default function EnhancedUsersManager() {
       await adminAPI.deleteAuthor(id);
       await fetchUsers();
     } catch (error) {
-      console.error('Error deleting user:', error);
       setError('Failed to delete user');
     }
   };

@@ -53,7 +53,6 @@ const PostForm = () => {
   // Fetch categories and post data
   useEffect(() => {
     const loadData = async () => {
-      console.log('🚀 PostForm useEffect triggered:', { isEditing, id });
       
       // Always fetch categories and tags
       await fetchCategories();
@@ -63,7 +62,6 @@ const PostForm = () => {
       if (isEditing && id) {
         await fetchPost();
       } else if (isEditing && !id) {
-        console.warn('⚠️ Edit mode but no ID provided');
         setError('No post ID provided for editing');
       }
     };
@@ -73,27 +71,21 @@ const PostForm = () => {
 
   const fetchCategories = async () => {
     try {
-      console.log('🔍 Fetching categories...');
       const categoriesData = await adminAPI.getCategories();
-      console.log('✅ Categories received:', categoriesData);
       setCategories(Array.isArray(categoriesData) ? categoriesData : []);
     } catch (error) {
-      console.error('❌ Error fetching categories:', error);
       setError('Failed to load categories');
     }
   };
 
   const fetchAvailableTags = async () => {
     try {
-      console.log('🔍 Fetching available tags...');
       // Fetch tags from API - this could be a separate endpoint or extracted from existing posts
       const tagsData = await adminAPI.getTags();
-      console.log('✅ Tags received:', tagsData);
       
       if (Array.isArray(tagsData) && tagsData.length > 0) {
         setAvailableTags(tagsData);
       } else {
-        console.log('📝 Using fallback tags (API returned empty or non-array)');
         // Fallback to common tech tags if API doesn't return any tags
         setAvailableTags([
           'React', 'JavaScript', 'AI', 'Blockchain', 'Cybersecurity', 
@@ -101,8 +93,6 @@ const PostForm = () => {
         ]);
       }
     } catch (error) {
-      console.error('❌ Error fetching tags:', error);
-      console.log('📝 Using fallback tags due to error');
       // Use fallback tags if API call fails
       setAvailableTags([
         'React', 'JavaScript', 'AI', 'Blockchain', 'Cybersecurity', 
@@ -114,10 +104,8 @@ const PostForm = () => {
   const fetchPost = async () => {
     try {
       setLoading(true);
-      console.log('🔍 Fetching post with ID:', id);
       
       const post = await adminAPI.getPostById(id);
-      console.log('✅ Post data received:', post);
       
       // Map the API response to form data structure
       const mappedData = {
@@ -136,17 +124,14 @@ const PostForm = () => {
         metaKeywords: post.metaKeywords || ''
       };
       
-      console.log('📝 Mapped form data:', mappedData);
       setFormData(mappedData);
       
       // Set image preview if available
       const imageUrl = post.imageUrl || post.featuredImage || '';
       setImagePreview(imageUrl);
-      console.log('🖼️ Image preview set to:', imageUrl);
       
     } catch (error) {
-      console.error('❌ Error fetching post:', error);
-      console.error('❌ Error details:', {
+      console.error({
         message: error.message,
         status: error.response?.status,
         statusText: error.response?.statusText,
@@ -225,9 +210,7 @@ const PostForm = () => {
       let currentUser;
       try {
         currentUser = await adminAPI.getCurrentUser();
-        console.log('✅ Current user found:', currentUser);
       } catch (userError) {
-        console.warn('Could not fetch current user, letting backend assign user:', userError.message);
       }
 
       // Match backend structure exactly - use summary instead of excerpt, imageUrl instead of featuredImage
@@ -255,14 +238,11 @@ const PostForm = () => {
       if (currentUser && currentUser.email !== 'test@techbirds.com') {
         const userId = parseInt(currentUser.id);
         if (isNaN(userId) || userId <= 0) {
-          console.error('❌ Invalid user ID:', currentUser.id);
           setError('❌ Invalid user session. Please log in again.');
           return;
         }
         postData.userId = userId; // ✨ NEW: Using userId instead of authorId
-        console.log('📝 Using authenticated user:', { name: currentUser.name, id: userId });
       } else {
-        console.log('📝 No valid user found - backend will need to assign user from authentication context');
         // Don't include userId - let backend handle it
       }
 
@@ -280,28 +260,23 @@ const PostForm = () => {
         return;
       }
 
-      console.log('📝 Sending post data:', postData);
 
       // Create a clean copy with only non-null values to avoid potential backend issues
       const cleanPostData = Object.fromEntries(
         Object.entries(postData).filter(([key, value]) => value !== null && value !== '' && value !== undefined)
       );
       
-      console.log('🧹 Clean post data (nulls removed):', cleanPostData);
 
       let result;
       if (isEditing) {
-        console.log('🔄 Updating existing post with ID:', id);
         result = await adminAPI.updatePost(id, cleanPostData);
       } else {
-        console.log('✨ Creating new post');
         result = await adminAPI.createPost(cleanPostData);
       }
 
-      console.log('✅ Post saved successfully:', result);
       navigate('/admin/posts');
     } catch (error) {
-      console.error('❌ Post save failed:', {
+      console.error({
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,

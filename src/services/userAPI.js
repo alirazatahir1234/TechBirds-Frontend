@@ -29,8 +29,6 @@ userAPI.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') {
-      console.error('🔥 Backend connection error - Is your .NET backend running?');
-      console.error('Expected URL:', userAPI.defaults.baseURL);
     }
     
     if (error.response?.status === 401) {
@@ -305,7 +303,6 @@ export const legacyAuthorAPI = {
         updatedAt: user.updatedAt
       }));
     } catch (error) {
-      console.warn('New users API not available, falling back to old authors API');
       throw error;
     }
   },
@@ -344,7 +341,6 @@ export const legacyAuthorAPI = {
         updatedAt: user.updatedAt
       };
     } catch (error) {
-      console.warn('User not found via new API');
       throw error;
     }
   }

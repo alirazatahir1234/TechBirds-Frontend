@@ -31,8 +31,7 @@ api.interceptors.response.use(
   (error) => {
     // Handle different error scenarios
     if (error.code === 'NETWORK_ERROR' || error.code === 'ERR_NETWORK') {
-      console.error('🔥 Backend connection error - Is your .NET backend running?');
-      console.error('Expected URL:', api.defaults.baseURL);
+      // Network errors are handled silently
     }
     
     if (error.response?.status === 401) {
@@ -48,11 +47,11 @@ api.interceptors.response.use(
     }
     
     if (error.response?.status === 404) {
-      console.warn('API endpoint not found:', error.config?.url);
+      // Endpoint not found
     }
     
-    if (error.response?.status === 500) {
-      console.error('Backend server error:', error.response.data);
+    if (error.response?.status >= 500) {
+      // Server errors are handled silently
     }
     
     return Promise.reject(error);
@@ -434,12 +433,10 @@ export const authorAPI = {
       }));
     } catch (error) {
       // Fallback to old authors endpoint if available
-      console.warn('New users API not available, attempting old authors API');
       try {
         const response = await api.get('/authors');
         return response.data;
       } catch (fallbackError) {
-        console.error('Both new users API and old authors API failed');
         throw error; // Throw the original error
       }
     }
@@ -506,26 +503,39 @@ export const authorAPI = {
 
   // Update author
   updateAuthor: async (id, authorData) => {
-    const userData = {
-      firstName: authorData.firstName,
-      lastName: authorData.lastName,
-      email: authorData.email,
-      bio: authorData.bio || null,
-      avatar: authorData.avatar || null,
-      website: authorData.website || null,
-      twitter: authorData.twitter || null,
-      linkedin: authorData.linkedin || null,
-      specialization: authorData.specialization || null,
-      isActive: authorData.status?.toLowerCase() === 'active',
-      role: mapToNewRoleSystem(authorData.role)
+    const updatedAuthorData = {
+      ...authorData,
+      password: authorData.password ? '[HIDDEN]' : undefined,
+      avatar: authorData.avatar?.substring(0, 100) + (authorData.avatar?.length > 100 ? '...' : '')
     };
 
-    // Only include password if provided
-    if (authorData.password && authorData.password.trim()) {
-      userData.password = authorData.password;
+    try {
+      // Map to new user structure
+      const userData = {
+        firstName: authorData.firstName,
+        lastName: authorData.lastName,
+        email: authorData.email,
+        bio: authorData.bio || null,
+        avatar: authorData.avatar || null,
+        website: authorData.website || null,
+        twitter: authorData.twitter || null,
+        linkedin: authorData.linkedin || null,
+        specialization: authorData.specialization || null,
+        isActive: authorData.status?.toLowerCase() === 'active',
+        role: mapToNewRoleSystem(authorData.role || 'author')
+      };
+
+      // Only include password if provided
+      if (authorData.password && authorData.password.trim()) {
+        userData.password = authorData.password;
+      }
+
+      // Make API call
+      const response = await axios.put(`/authors/${id}`, userData);
+      return response.data;
+    } catch (error) {
+      throw new Error(`Failed to update author: ${error.message}`);
     }
-    
-    return await userAPI.updateUser(id, userData);
   },
 
   // Delete author
@@ -704,30 +714,23 @@ export const adminAPI = {
   getCurrentAdmin: async () => {
     // Use the correct admin endpoint first
     try {
-      console.log('🔍 Trying admin auth endpoint: /admin/auth/me');
       const response = await api.get('/admin/auth/me');
-      console.log('✅ getCurrentAdmin successful with /admin/auth/me:', response.data);
       return response.data;
     } catch (error) {
-      console.log('❌ /admin/auth/me failed:', error.response?.status);
       
       // Fallback to other possible endpoints
       const fallbackEndpoints = ['/auth/me', '/api/auth/me', '/admin/me', '/user/profile'];
       
       for (const endpoint of fallbackEndpoints) {
         try {
-          console.log(`🔍 Trying fallback endpoint: ${endpoint}`);
           const response = await api.get(endpoint);
-          console.log(`✅ getCurrentAdmin successful with ${endpoint}:`, response.data);
           return response.data;
         } catch (error) {
-          console.log(`❌ ${endpoint} failed:`, error.response?.status);
           continue;
         }
       }
       
       // If all endpoints fail, throw error
-      console.warn('⚠️ No getCurrentAdmin endpoint available');
       throw new Error('Authentication endpoints not available');
     }
   },
@@ -742,7 +745,6 @@ export const adminAPI = {
       const response = await api.post('/admin/auth/logout');
       return response.data;
     } catch (error) {
-      console.warn('Admin logout endpoint not available, clearing local storage');
     } finally {
       // Clear all possible tokens
       localStorage.removeItem('token');
@@ -760,7 +762,6 @@ export const adminAPI = {
       const response = await userAPI.getUsers(params);
       return response;
     } catch (error) {
-      console.warn('New users API not available, falling back to legacy authors API');
       const response = await api.get('/authors', { params });
       return response.data;
     }
@@ -784,16 +785,13 @@ export const adminAPI = {
         role: mapToNewRoleSystem(authorData.role || 'author')
       };
       
-      console.log('🔄 Creating user via ADMIN auth/register endpoint:', userData);
-      console.log('📡 POST /admin/auth/register with data:', JSON.stringify(userData, null, 2));
       
       // Use ADMIN registration endpoint since we're creating users with specific roles
       const response = await api.post('/admin/auth/register', userData);
-      console.log('✅ User created successfully via admin endpoint:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Failed to create user via admin/auth/register:', error);
-      console.error('❌ Error details:', {
+      // Log the error details for debugging
+      console.error('Error in createAuthor:', {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
@@ -824,20 +822,20 @@ export const adminAPI = {
       } else {
         userMessage += error.message;
       }
-      
+
       const enhancedError = new Error(userMessage);
       enhancedError.originalError = error;
       throw enhancedError;
-    }
+    };
   },
 
   updateAuthor: async (id, authorData) => {
-    console.log('🔄 API: Updating author', id, 'with data:', {
+    const updatedAuthorData = {
       ...authorData,
       password: authorData.password ? '[HIDDEN]' : undefined,
       avatar: authorData.avatar?.substring(0, 100) + (authorData.avatar?.length > 100 ? '...' : '')
-    });
-    
+    };
+
     try {
       // Map to new user structure
       const userData = {
@@ -858,24 +856,12 @@ export const adminAPI = {
       if (authorData.password && authorData.password.trim()) {
         userData.password = authorData.password;
       }
-      
-      const response = await userAPI.updateUser(id, userData);
-      console.log('✅ API: Author updated successfully via new user API:', response);
-      return response;
+
+      // Make API call
+      const response = await axios.put(`/authors/${id}`, userData);
+      return response.data;
     } catch (error) {
-      console.warn('New users API not available, falling back to legacy authors API');
-      
-      try {
-        const response = await api.put(`/authors/${id}`, authorData);
-        console.log('✅ API: Author updated successfully via legacy API:', response.data);
-        return response.data;
-      } catch (fallbackError) {
-        console.error('❌ API: Both new and legacy author update failed:', {
-          newAPIError: error.response?.data,
-          legacyAPIError: fallbackError.response?.data
-        });
-        throw fallbackError;
-      }
+      throw new Error(`Failed to update author: ${error.message}`);
     }
   },
 
@@ -884,7 +870,6 @@ export const adminAPI = {
       const response = await userAPI.deleteUser(id);
       return response;
     } catch (error) {
-      console.warn('New users API not available, falling back to legacy authors API');
       const response = await api.delete(`/authors/${id}`);
       return response.data;
     }
@@ -913,7 +898,6 @@ export const adminAPI = {
         updatedAt: user.updatedAt
       };
     } catch (error) {
-      console.warn('New users API not available, falling back to legacy authors API');
       const response = await api.get(`/authors/${id}`);
       return response.data;
     }
@@ -923,7 +907,6 @@ export const adminAPI = {
     try {
       return await userAPI.getArticlesByUser(id, params.page, params.limit);
     } catch (error) {
-      console.warn('New users API not available, falling back to legacy authors API');
       const response = await api.get(`/authors/${id}/posts`, { params });
       return response.data;
     }
@@ -935,7 +918,6 @@ export const adminAPI = {
       const response = await userAPI.toggleUserStatus(id, isActive);
       return response;
     } catch (error) {
-      console.warn('New users API not available, falling back to legacy method');
       // Fallback to updating the full author
       try {
         const author = await adminAPI.getAuthorById(id);
@@ -943,7 +925,6 @@ export const adminAPI = {
         const response = await adminAPI.updateAuthor(id, updatedAuthor);
         return response;
       } catch (fallbackError) {
-        console.error('Both new and legacy status update methods failed');
         throw fallbackError;
       }
     }
@@ -951,34 +932,23 @@ export const adminAPI = {
 
   // Articles management (using posts endpoints)
   getPosts: async (params = {}) => {
-    console.log('🔍 AdminAPI.getPosts called with params:', params);
-    
-    // Use posts endpoint directly
     try {
-      console.log('📡 Trying /posts endpoint...');
       const response = await api.get('/posts', { params });
-      console.log('✅ Posts response received:', {
+      return {
         status: response.status,
         dataType: Array.isArray(response.data) ? 'Array' : typeof response.data,
         length: Array.isArray(response.data) ? response.data.length : 'N/A',
         firstItem: Array.isArray(response.data) && response.data.length > 0 ? response.data[0] : 'N/A'
-      });
-      return response.data;
+      };
     } catch (error) {
-      console.error('❌ Posts endpoint failed:', error.response?.status, error.message);
-      
-      // Fallback to admin/posts if available
       try {
-        console.log('🔄 Trying /admin/posts endpoint as fallback...');
         const response = await api.get('/admin/posts', { params });
-        console.log('✅ Admin posts response received:', {
+        return {
           status: response.status,
           dataType: Array.isArray(response.data) ? 'Array' : typeof response.data,
           length: Array.isArray(response.data) ? response.data.length : 'N/A'
-        });
-        return response.data;
+        };
       } catch (adminError) {
-        console.error('❌ Both endpoints failed. Admin posts error:', adminError.message);
         throw adminError;
       }
     }
@@ -1012,7 +982,6 @@ export const adminAPI = {
       const response = await api.post('/posts', mappedData);
       return response.data;
     } catch (error) {
-      console.error('Posts creation failed, trying admin posts endpoint');
       
       if (error.response?.status === 404) {
         // Try admin posts endpoint as fallback
@@ -1020,7 +989,6 @@ export const adminAPI = {
           const response = await api.post('/admin/posts', mappedData);
           return response.data;
         } catch (adminError) {
-          console.error('Both posts and admin posts creation failed');
           throw adminError;
         }
       }
@@ -1029,7 +997,6 @@ export const adminAPI = {
   },
 
   updatePost: async (id, postData) => {
-    console.log('🔄 AdminAPI.updatePost called with:', { id, postData });
     
     // Map authorId to userId for new system compatibility
     const mappedData = {
@@ -1045,25 +1012,18 @@ export const adminAPI = {
     };
     
     try {
-      console.log('📡 Trying PUT /posts/{id} endpoint...');
       const response = await api.put(`/posts/${id}`, mappedData);
-      console.log('✅ Update post response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ Posts PUT failed:', error.response?.status, error.message);
       
       if (error.response?.status === 404) {
         try {
-          console.log('🔄 Trying PUT /admin/posts/{id} endpoint as fallback...');
           const response = await api.put(`/admin/posts/${id}`, mappedData);
-          console.log('✅ Update admin posts response:', response.data);
           return response.data;
         } catch (adminError) {
-          console.error('❌ Admin posts PUT also failed:', adminError.response?.status, adminError.message);
           throw adminError;
         }
       } else if (error.response?.status === 405) {
-        console.error('❌ PUT method not allowed - backend does not support updating posts');
         throw error;
       }
       
@@ -1086,36 +1046,27 @@ export const adminAPI = {
   },
 
   getPostById: async (id) => {
-    console.log('🔍 AdminAPI.getPostById called with ID:', id);
-    
     try {
-      console.log('📡 Trying /posts/{id} endpoint...');
       const response = await api.get(`/posts/${id}`);
-      console.log('✅ Post response received:', {
+      return {
         status: response.status,
         dataType: typeof response.data,
         hasData: !!response.data,
         postId: response.data?.id,
         postTitle: response.data?.title
-      });
-      return response.data;
+      };
     } catch (error) {
-      console.error('❌ Posts/{id} endpoint failed:', error.response?.status, error.message);
-      
       if (error.response?.status === 404) {
         try {
-          console.log('🔄 Trying /admin/posts/{id} endpoint as fallback...');
           const response = await api.get(`/admin/posts/${id}`);
-          console.log('✅ Admin posts response received:', {
+          return {
             status: response.status,
             dataType: typeof response.data,
             hasData: !!response.data,
             postId: response.data?.id,
             postTitle: response.data?.title
-          });
-          return response.data;
+          };
         } catch (adminError) {
-          console.error('❌ Admin posts/{id} endpoint also failed:', adminError.response?.status, adminError.message);
           throw adminError;
         }
       }
@@ -1128,10 +1079,8 @@ export const adminAPI = {
       const response = await api.get('/admin/tags');
       return response.data;
     } catch (error) {
-      console.warn('Tags endpoint not available yet:', error.message);
       // If tags endpoint doesn't exist, try to extract unique tags from existing posts
       try {
-        console.log('🔄 Extracting tags from existing posts...');
         const posts = await adminAPI.getPosts({ limit: 1000 });
         const allTags = new Set();
         
@@ -1152,12 +1101,9 @@ export const adminAPI = {
         }
         
         const extractedTags = Array.from(allTags).filter(tag => tag.length > 0);
-        console.log('✅ Extracted tags from posts:', extractedTags);
         return extractedTags;
       } catch (postsError) {
-        console.warn('Could not extract tags from posts:', postsError.message);
         // Return empty array instead of throwing error
-        console.log('📝 Using empty tags array - /admin/tags endpoint not implemented');
         return [];
       }
     }
@@ -1184,13 +1130,24 @@ export const adminAPI = {
     return response.data;
   },
 
+  // Bulk category import
+  bulkImportCategories: async (categories) => {
+    try {
+      const response = await api.post('/admin/categories/bulk', {
+        categories: categories
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Dashboard stats
   getDashboardStats: async () => {
     try {
       const response = await api.get('/admin/dashboard/stats');
       return response.data;
     } catch (error) {
-      console.warn('Dashboard stats endpoint not available yet');
       // Return mock data for now
       return {
         totalArticles: 0,
@@ -1213,7 +1170,6 @@ export const adminAPI = {
       });
       return response.data;
     } catch (error) {
-      console.warn('File upload endpoint not available yet');
       throw new Error('File upload not implemented yet');
     }
   },
@@ -1382,11 +1338,9 @@ export const mediaAPI = {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
         
-        console.log(`Upload successful with endpoint: ${attempt.endpoint}`);
         return response.data;
         
       } catch (error) {
-        console.log(`Upload failed with endpoint ${attempt.endpoint}:`, error.response?.status, error.response?.data);
         lastError = error;
         
         // If it's a 405 Method Not Allowed, try the next endpoint

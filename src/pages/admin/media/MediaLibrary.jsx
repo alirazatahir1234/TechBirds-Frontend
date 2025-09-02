@@ -50,7 +50,6 @@ export default function MediaLibrary() {
         setPagination(res.pagination || { page: filters.page, limit: filters.limit, total: res.total || (res.items?.length || 0) });
       }
     } catch (e) {
-      console.error('Failed to fetch media', e);
       setError(e?.response?.data?.message || e.message || 'Failed to fetch media');
     } finally {
       setLoading(false);
@@ -83,9 +82,6 @@ export default function MediaLibrary() {
       await fetchMedia();
       
     } catch (e) {
-      console.error('Upload failed - Full error:', e);
-      console.error('Error response:', e.response?.data);
-      console.error('Error status:', e.response?.status);
       
       let errorMessage = 'Upload failed';
       

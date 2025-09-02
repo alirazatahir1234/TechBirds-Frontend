@@ -29,7 +29,6 @@ const CategoryPage = () => {
         setPage(1);
       } catch (err) {
         setError('Failed to load category. Please try again later.');
-        console.error('Error fetching category data:', err);
         
         // Mock data for development
         setCategory({
@@ -72,7 +71,6 @@ const CategoryPage = () => {
       setPage(nextPage);
       setHasMore(articleList.length === 12);
     } catch (err) {
-      console.error('Error loading more articles:', err);
     }
   };
 

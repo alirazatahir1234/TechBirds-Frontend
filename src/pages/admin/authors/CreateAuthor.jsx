@@ -75,11 +75,9 @@ export default function CreateUser() {
     setIsLoading(true);
     
     try {
-      console.log('🚀 Creating user via API:', formData);
       
       // Call the actual API to create the user
       const newUser = await userAPI.createUser(formData);
-      console.log('✅ User created successfully:', newUser);
       
       alert('User created successfully! They can now login with their credentials.');
       
@@ -102,7 +100,6 @@ export default function CreateUser() {
       setAvatarPreview(null);
       
     } catch (error) {
-      console.error('❌ Error creating user:', error);
       const errorMessage = error.message || error.originalError?.message || 'Failed to create user. Please try again.';
       alert(`Failed to create user: ${errorMessage}`);
     } finally {

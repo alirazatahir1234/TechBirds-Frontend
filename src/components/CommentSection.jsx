@@ -35,7 +35,6 @@ const CommentSection = ({ articleId, postId }) => {
       setComments(data || []);
       setError(null);
     } catch (err) {
-      console.error('Failed to load comments:', err);
       setError('Failed to load comments. Please try again.');
       setComments([]);
     } finally {
@@ -83,7 +82,6 @@ const CommentSection = ({ articleId, postId }) => {
       setComments(prevComments => [...prevComments, newCommentResponse]);
       setNewComment('');
     } catch (err) {
-      console.error('Failed to create comment:', err);
       setError(err.message || 'Failed to post comment. Please try again.');
     } finally {
       setSubmitting(false);
@@ -120,7 +118,6 @@ const CommentSection = ({ articleId, postId }) => {
       setEditingId(null);
       setEditContent('');
     } catch (err) {
-      console.error('Failed to update comment:', err);
       setError(err.message || 'Failed to update comment. Please try again.');
     }
   };
@@ -147,7 +144,6 @@ const CommentSection = ({ articleId, postId }) => {
         prevComments.filter(comment => comment.id !== commentId)
       );
     } catch (err) {
-      console.error('Failed to delete comment:', err);
       setError(err.message || 'Failed to delete comment. Please try again.');
     }
   };

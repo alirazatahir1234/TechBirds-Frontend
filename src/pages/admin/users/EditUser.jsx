@@ -13,7 +13,6 @@ export default function EditUser() {
   // Add validation to ensure user data exists
   useEffect(() => {
     if (!user || !user.id) {
-      console.error('No user data provided');
       toast.error('No user data provided. Redirecting to users list.');
       setTimeout(() => {
         navigate('/admin/users');

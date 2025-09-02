@@ -40,7 +40,6 @@ const AdminDashboard = () => {
       ]);
 
       // Debug response structure
-      console.log('🔍 API Responses:', { postsResponse, usersResponse, categoriesResponse });
 
       // Process responses
       const postsData = postsResponse.status === 'fulfilled' ? postsResponse.value : [];
@@ -52,7 +51,6 @@ const AdminDashboard = () => {
       try {
         siteStats = await statsAPI.getSiteStats();
       } catch (statsError) {
-        console.warn('Site stats not available:', statsError.message);
       }
 
       // Update state with real data
@@ -68,7 +66,6 @@ const AdminDashboard = () => {
       setLastUpdated(new Date());
       
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
       setError('Failed to load dashboard data. Please check if your backend is running.');
     } finally {
       setLoading(false);

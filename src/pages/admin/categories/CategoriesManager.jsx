@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Save, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Search, Edit2, Trash2, Save, X, Download, FileText, FileSpreadsheet, ChevronDown } from 'lucide-react';
 import { adminAPI } from '../../../services/api';
+import * as XLSX from 'xlsx';
 
 const CategoriesManager = () => {
   const [categories, setCategories] = useState([]);
@@ -11,12 +12,34 @@ const CategoriesManager = () => {
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
   
+  // Excel import states and refs
+  const [bulkImporting, setBulkImporting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showExcelDropdown, setShowExcelDropdown] = useState(false);
+  
+  // Excel import ref
+  const fileInputRef = useRef(null);
+  
   // Description functionality now enabled - backend has been fixed
   const DESCRIPTION_ENABLED = true;
 
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showExcelDropdown && !event.target.closest('.excel-dropdown-container')) {
+        setShowExcelDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showExcelDropdown]);
 
   const fetchCategories = async () => {
     try {
@@ -25,7 +48,6 @@ const CategoriesManager = () => {
       const categories = await adminAPI.getCategories();
       setCategories(categories || []);
     } catch (error) {
-      console.error('Error fetching categories:', error);
       setError('Failed to load categories. Please try again.');
     } finally {
       setLoading(false);
@@ -55,13 +77,6 @@ const CategoriesManager = () => {
         setIsAddingNew(false);
       }
     } catch (error) {
-      console.error('Error creating category:', error);
-      console.error('🚨 Full error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        statusText: error.response?.statusText
-      });
       
       // More specific error message based on response
       if (error.response?.status === 400) {
@@ -96,13 +111,6 @@ const CategoriesManager = () => {
         setFormData({ name: '', description: '' });
       }
     } catch (error) {
-      console.error('Error updating category:', error);
-      console.error('🚨 Full error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        statusText: error.response?.statusText
-      });
       
       // More specific error message based on response
       if (error.response?.status === 400) {
@@ -135,7 +143,6 @@ const CategoriesManager = () => {
       await adminAPI.deleteCategory(id);
       await fetchCategories(); // Refresh the list
     } catch (error) {
-      console.error('Error deleting category:', error);
       
       // Handle specific foreign key constraint error
       if (error.response?.status === 500) {
@@ -159,6 +166,162 @@ const CategoriesManager = () => {
       }
     }
   };
+
+  // Excel template download
+  const downloadExcelTemplate = () => {
+    const templateData = [
+      { Name: 'Technology', Description: 'Latest tech news and innovations' },
+      { Name: 'Business', Description: 'Business insights and market trends' },
+      { Name: 'Health', Description: 'Health and wellness articles' },
+      { Name: 'Sports', Description: 'Sports news and updates' },
+      { Name: 'Entertainment', Description: 'Entertainment and celebrity news' }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(templateData);
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 20 }, // Name column
+      { wch: 40 }  // Description column
+    ];
+    
+    // Add header styling (basic)
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+      const address = XLSX.utils.encode_cell({ r: 0, c: C });
+      if (!worksheet[address]) continue;
+      worksheet[address].s = {
+        font: { bold: true },
+        fill: { fgColor: { rgb: "CCCCCC" } }
+      };
+    }
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Categories Template');
+    
+    // Download the file
+    XLSX.writeFile(workbook, 'categories_template.xlsx');
+  };
+
+  // Excel file import
+  const handleExcelImport = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setBulkImporting(true);
+    setError(null);
+    setSuccessMessage('');
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Get the first worksheet
+        const worksheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[worksheetName];
+        
+        // Convert to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        
+        if (jsonData.length === 0) {
+          setError('The Excel file appears to be empty or has no valid data');
+          setBulkImporting(false);
+          return;
+        }
+
+        // Map the data to our category format
+        const categoriesToImport = jsonData.map((row, index) => {
+          // Support multiple column name formats
+          const name = row.Name || row.name || row.CATEGORY || row.Category || 
+                      row['Category Name'] || row['category name'] || '';
+          const description = row.Description || row.description || row.DESC || 
+                            row.Desc || row['Category Description'] || 
+                            row['category description'] || '';
+
+          if (!name || !name.toString().trim()) {
+            throw new Error(`Row ${index + 2} is missing a category name`);
+          }
+
+          return {
+            name: name.toString().trim(),
+            description: description ? description.toString().trim() : ''
+          };
+        });
+
+        // Call the API - ensure data format matches backend expectation
+        const result = await adminAPI.bulkImportCategories(categoriesToImport);
+        
+        // Success
+        setSuccessMessage(`Successfully imported ${categoriesToImport.length} categories from Excel file!`);
+        
+        // Refresh the categories list
+        await fetchCategories();
+        
+      } catch (error) {
+        
+        let errorMessage = 'Failed to import Excel file.';
+        if (error.response?.status === 403) {
+          errorMessage = 'Access denied (403). Please check your authentication or admin permissions.';
+        } else if (error.message.includes('Row')) {
+          errorMessage = error.message;
+        } else if (error.response?.status === 400) {
+          const errorData = error.response?.data?.message || error.response?.data?.error || 'Invalid data provided';
+          errorMessage = `Bad Request: ${errorData}`;
+        } else if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        if (error.response?.status === 403) {
+          setError('Access denied (403). Please check your authentication or admin permissions.');
+        }
+        
+        setError(errorMessage);
+      } finally {
+        setBulkImporting(false);
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  };
+
+  // Export current categories to Excel
+  const exportCategoriesToExcel = () => {
+    if (categories.length === 0) {
+      setError('No categories to export');
+      return;
+    }
+
+    const exportData = categories.map(category => ({
+      Name: category.name,
+      Description: category.description || ''
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    
+    // Set column widths
+    worksheet['!cols'] = [
+      { wch: 20 }, // Name column
+      { wch: 40 }  // Description column
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Categories');
+    
+    const fileName = `categories_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(workbook, fileName);
+    
+    setSuccessMessage(`Exported ${categories.length} categories to ${fileName}`);
+  };
+
+
 
   const startEdit = (category) => {
     setEditingId(category.id);
@@ -204,20 +367,129 @@ const CategoriesManager = () => {
               <h1 className="text-3xl font-bold text-gray-900">Categories Manager</h1>
               <p className="mt-2 text-gray-600">Manage article categories for your website</p>
             </div>
-            <button
-              onClick={() => {
-                setIsAddingNew(true);
-                setEditingId(null);
-                setFormData({ name: '', description: '' });
-                setError(null);
-              }}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Category
-            </button>
+            <div className="flex space-x-3">
+              {/* Excel Operations Dropdown */}
+              <div className="relative excel-dropdown-container">
+                <button
+                  onClick={() => setShowExcelDropdown(!showExcelDropdown)}
+                  className="inline-flex items-center px-4 py-2 border border-green-300 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                >
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Excel Operations
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </button>
+                
+                {showExcelDropdown && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                    <div className="py-1" role="menu">
+                      <button
+                        onClick={() => {
+                          downloadExcelTemplate();
+                          setShowExcelDropdown(false);
+                        }}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        role="menuitem"
+                      >
+                        <Download className="h-4 w-4 mr-3 text-green-500" />
+                        Download Template
+                      </button>
+                      <button
+                        onClick={() => {
+                          fileInputRef.current?.click();
+                          setShowExcelDropdown(false);
+                        }}
+                        disabled={bulkImporting}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        role="menuitem"
+                      >
+                        {bulkImporting ? (
+                          <>
+                            <div className="animate-spin h-4 w-4 mr-3 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                            Importing...
+                          </>
+                        ) : (
+                          <>
+                            <FileSpreadsheet className="h-4 w-4 mr-3 text-blue-500" />
+                            Import from Excel
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          exportCategoriesToExcel();
+                          setShowExcelDropdown(false);
+                        }}
+                        disabled={categories.length === 0}
+                        className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        role="menuitem"
+                      >
+                        <Download className="h-4 w-4 mr-3 text-purple-500" />
+                        Export to Excel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Add Category Button */}
+              <button
+                onClick={() => {
+                  setIsAddingNew(true);
+                  setEditingId(null);
+                  setFormData({ name: '', description: '' });
+                  setError(null);
+                  setSuccessMessage('');
+                  setShowExcelDropdown(false);
+                }}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Category
+              </button>
+            </div>
           </div>
+          
+          {/* Hidden file input for Excel import */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".xlsx,.xls,.csv"
+            onChange={handleExcelImport}
+            style={{ display: 'none' }}
+          />
         </div>
+
+
+
+        {/* Success Message */}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">Success</h3>
+                <div className="mt-2 text-sm text-green-700">
+                  <p>{successMessage}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
+            <div className="flex">
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">Success</h3>
+                <div className="mt-2 text-sm text-green-700">
+                  <p>{successMessage}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (

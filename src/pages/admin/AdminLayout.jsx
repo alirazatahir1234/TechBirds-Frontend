@@ -58,7 +58,6 @@ const AdminLayout = () => {
           { name: 'Draft Posts', value: data.draftPosts?.toLocaleString() || '0', change: '+0%', changeType: 'neutral' }
         ]);
       } catch (error) {
-        console.warn('Could not fetch stats:', error);
         // Keep default values on error
       }
     };
