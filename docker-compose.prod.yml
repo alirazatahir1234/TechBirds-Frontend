@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Frontend React Application (Production)
+  techbirds-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: techbirds-frontend-prod
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - techbirds-db
+      - techbirds-redis
+    networks:
+      - techbirds-network
+    restart: unless-stopped
+
+  # Database (PostgreSQL)
+  techbirds-db:
+    image: postgres:15-alpine
+    container_name: techbirds-db-prod
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=techbirds
+      - POSTGRES_USER=techbirds_user
+      - POSTGRES_PASSWORD=techbirds_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - techbirds-network
+    restart: unless-stopped
+
+  # Redis for caching
+  techbirds-redis:
+    image: redis:7-alpine
+    container_name: techbirds-redis-prod
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - techbirds-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  techbirds-network:
+    driver: bridge

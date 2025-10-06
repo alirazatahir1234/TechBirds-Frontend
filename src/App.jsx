@@ -87,15 +87,26 @@ function App() {
           </>
         } />
 
-        {/* Admin Routes (wrapped in AdminAuthProvider) */}
+        {/* Admin Auth Routes (outside AdminLayout) */}
+        <Route path="/admin/login" element={
+          <AdminAuthProvider>
+            <AdminLogin />
+          </AdminAuthProvider>
+        } />
+        <Route path="/admin/register" element={
+          <AdminAuthProvider>
+            <AdminRegister />
+          </AdminAuthProvider>
+        } />
+
+        {/* Admin Routes (wrapped in AdminAuthProvider and AdminLayout) */}
         <Route path="/admin" element={
           <AdminAuthProvider>
             <AdminLayout />
           </AdminAuthProvider>
         }>
           <Route index element={<AdminDashboard />} />
-          <Route path="login" element={<AdminLogin />} />
-          <Route path="register" element={<AdminRegister />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="posts" element={<PostsList />} />
           <Route path="posts/new" element={<PostForm />} />
           <Route path="posts/edit/:id" element={<PostForm />} />

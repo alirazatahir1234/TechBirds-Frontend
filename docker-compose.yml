@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # Frontend React Application
+  techbirds-frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: techbirds-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:5001
+    depends_on:
+      - techbirds-backend
+    networks:
+      - techbirds-network
+    restart: unless-stopped
+
+  # Backend .NET Application (placeholder for future use)
+  techbirds-backend:
+    image: mcr.microsoft.com/dotnet/aspnet:8.0
+    container_name: techbirds-backend
+    ports:
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5001
+    volumes:
+      # Mount your backend code here when ready
+      # - ./backend:/app
+      - backend_data:/app/data
+    networks:
+      - techbirds-network
+    restart: unless-stopped
+    # For now, we'll use a simple command to keep container running
+    command: ["tail", "-f", "/dev/null"]
+
+  # Database (PostgreSQL)
+  techbirds-db:
+    image: postgres:15-alpine
+    container_name: techbirds-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=techbirds
+      - POSTGRES_USER=techbirds_user
+      - POSTGRES_PASSWORD=techbirds_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - techbirds-network
+    restart: unless-stopped
+
+  # Redis for caching
+  techbirds-redis:
+    image: redis:7-alpine
+    container_name: techbirds-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - techbirds-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:
+  backend_data:
+
+networks:
+  techbirds-network:
+    driver: bridge

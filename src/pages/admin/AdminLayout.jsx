@@ -68,8 +68,11 @@ const AdminLayout = () => {
   useEffect(() => {
     if (!loading && !adminUser) {
       navigate('/admin/login');
+    } else if (!loading && adminUser && location.pathname === '/admin') {
+      // Redirect authenticated users from /admin to /admin/dashboard
+      navigate('/admin/dashboard');
     }
-  }, [adminUser, loading, navigate]);
+  }, [adminUser, loading, navigate, location.pathname]);
 
   // Show loading while checking authentication
   if (loading) {
